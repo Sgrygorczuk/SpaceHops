@@ -59,10 +59,14 @@ public class Collectible {
     Output: Void
     Purpose: Checks if flappy has intersected with any of the rectangles or circles
     */
-    void isColliding(SpaceCraft spaceCraft) {
+    boolean isColliding(SpaceCraft spaceCraft) {
         Circle spaceCraftCollisionCircle = spaceCraft.getCollisionCircle();
-        if(Intersector.overlaps(spaceCraftCollisionCircle, collectibleCircle)){collectedFlag = true;}
+        return Intersector.overlaps(spaceCraftCollisionCircle, collectibleCircle);
     }
+
+    void setCollidingFlag(){ collectedFlag = true;}
+
+    boolean getCollidingFlag(){return collectedFlag;}
 
 
         /*

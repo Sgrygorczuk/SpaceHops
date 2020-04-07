@@ -21,8 +21,10 @@ class StartScreen extends ScreenAdapter {
     private Stage stage;
 
     private Texture backgroundTexture;
-    private Texture playUpTexture;
-    private Texture playDownTexture;
+    private Texture adventureUpTexture;
+    private Texture adventureDownTexture;
+    private Texture endlessUpTexture;
+    private Texture endlessDownTexture;
     private Texture titleTexture;
 
     private final Game game;
@@ -36,28 +38,34 @@ class StartScreen extends ScreenAdapter {
         Image background = new Image(backgroundTexture);
         stage.addActor(background);
 
-        playDownTexture = new Texture(Gdx.files.internal("AdventurePressed.png"));
-        playUpTexture = new Texture(Gdx.files.internal("AdventureUnpressed.png"));
-        ImageButton play = new ImageButton(new TextureRegionDrawable(new TextureRegion(playUpTexture)),
-                new TextureRegionDrawable(playDownTexture));
-        play.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/4, Align.center);
-        stage.addActor(play);
-
-        play.addListener(new ActorGestureListener() {
-            @Override
-            public void tap(InputEvent event, float x, float y, int count,
-                            int button) {
-                super.tap(event, x, y, count, button);
-                game.setScreen(new GameScreen());
-                dispose();
-            }
-        });
-
-
         titleTexture = new Texture(Gdx.files.internal("Title.png"));
         Image title = new Image(titleTexture);
         title.setPosition(WORLD_WIDTH/2, 3*WORLD_HEIGHT/4,Align.center);
         stage.addActor(title);
+
+        adventureDownTexture = new Texture(Gdx.files.internal("AdventurePressed.png"));
+        adventureUpTexture = new Texture(Gdx.files.internal("AdventureUnpressed.png"));
+        ImageButton adventure = new ImageButton(new TextureRegionDrawable(new TextureRegion(adventureUpTexture)),
+                new TextureRegionDrawable(adventureDownTexture));
+        adventure.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/6+adventure.getHeight() + 2, Align.center);
+        stage.addActor(adventure);
+
+        endlessDownTexture = new Texture(Gdx.files.internal("EndlessPressed.png"));
+        endlessUpTexture = new Texture(Gdx.files.internal("EndlessUnpressed.png"));
+        ImageButton endless = new ImageButton(new TextureRegionDrawable(new TextureRegion(endlessUpTexture)),
+                new TextureRegionDrawable(endlessDownTexture));
+        endless.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/6, Align.center);
+        stage.addActor(endless);
+
+        adventure.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count,
+                            int button) {
+                super.tap(event, x, y, count, button);
+                game.setScreen(new GameScreen(game));
+                dispose();
+            }
+        });
     }
 
     public void resize(int width, int height){ stage.getViewport().update(width,height,true);}
@@ -71,8 +79,10 @@ class StartScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         backgroundTexture.dispose();
-        playUpTexture.dispose();
-        playDownTexture.dispose();
+        adventureUpTexture.dispose();
+        adventureDownTexture.dispose();
+        endlessDownTexture.dispose();
+        endlessUpTexture.dispose();
         titleTexture.dispose();
     }
 

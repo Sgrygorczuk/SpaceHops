@@ -8,6 +8,7 @@ while in an active game environment.
 
 package com.packt.spacehops;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
@@ -22,6 +23,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
@@ -32,6 +34,8 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import static sun.misc.Version.print;
+
 class GameScreen extends ScreenAdapter {
 
     /*
@@ -40,7 +44,7 @@ class GameScreen extends ScreenAdapter {
     private static final float WORLD_WIDTH = 320;
     private static final float WORLD_HEIGHT = 480;
 
-    private static final int ASTEROIDS_PASSED = 1;
+    private static final int ASTEROIDS_PASSED = 5;
     private static final int GOAL = 10;
 
     /*
@@ -49,7 +53,7 @@ class GameScreen extends ScreenAdapter {
     private enum LEVEL {LevelOne, LevelTwo, LevelThree, StageFour}
     private LEVEL level = LEVEL.LevelOne;
 
-    private enum PART {PartOne, PartTwo, PartThree, PartFour}
+    private enum PART {PartOne, PartTwo, PartThree, PartFour, PartFive}
     private PART part = PART.PartOne;
 
     /*
@@ -77,11 +81,20 @@ class GameScreen extends ScreenAdapter {
     private Texture progressBarTexture;
     private Texture profileTexture;
     private Texture progressBarFrameTexture;
-    private Texture playUpTexture;
-    private Texture playDownTexture;
-    Texture spaceCraftTexture;
+    private Texture menuUpTexture;
+    private Texture menuDownTexture;
+    private Texture quitUpTexture;
+    private Texture quitDownTexture;
+    private Texture resumeUpTexture;
+    private Texture resumeDownTexture;
+    private Texture spaceCraftTexture;
+    private Texture menuBackgroundTexture;
 
-    private Stage stageStage;
+    private Stage mainScreen;
+    private Stage menuScreen;
+    private Stage nextLevelScreen;
+    private float buttonHeight;
+    private float buttonWidth;
 
     /*
     Flappee Bee Object -- Object that deals with Flappee Bee's operations
@@ -98,6 +111,8 @@ class GameScreen extends ScreenAdapter {
     private Planet earth;
 
     private ProgressBar progressBar;
+
+    private Rectangle menuBackground;
 
     private ConversationBox conversationBox;
     private boolean screenOn = true;
@@ -124,6 +139,11 @@ class GameScreen extends ScreenAdapter {
     private boolean textureFlag = true;
     private boolean clickFlag = true;
     private boolean pauseFlag = false;
+    private boolean stopSpawningFlag = false;
+    private boolean endLevelFlag = false;
+
+    private final Game game;
+    GameScreen(Game game) { this.game = game; }
 
     /*
     Input: The width and height of the screen
@@ -143,6 +163,7 @@ class GameScreen extends ScreenAdapter {
     @Override
     public void show() {
         showCamera();           //Sets up camera through which objects are draw through
+        showMenu();
         showMenuButton();       //Sets up menu button that brings up menu and pauses game
         showTexture();          //Connects textures to the images
         showObjects();          //Creates object and passes them the dimensions and textures
@@ -175,6 +196,8 @@ class GameScreen extends ScreenAdapter {
         progressBar = new ProgressBar(WORLD_WIDTH,WORLD_HEIGHT,progressBarFrameTexture,progressBarTexture);
         progressBar.setGoal(GOAL);
         conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
+
+        menuBackground = new Rectangle(WORLD_WIDTH/2 - buttonWidth/2 - 10, (float) (WORLD_HEIGHT/2 - 1.5*buttonHeight - 10), buttonWidth + 20, 2*buttonHeight + 40);
     }
 
     /*
@@ -195,23 +218,63 @@ class GameScreen extends ScreenAdapter {
     Purpose: Sets up the button that will pause the game and bring up the menu
     */
     private void showMenuButton(){
-        stageStage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
-        Gdx.input.setInputProcessor(stageStage);
+        mainScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        Gdx.input.setInputProcessor(mainScreen);
 
-        playDownTexture = new Texture(Gdx.files.internal("AdventurePressed.png"));
-        playUpTexture = new Texture(Gdx.files.internal("AdventureUnpressed.png"));
-        ImageButton play = new ImageButton(new TextureRegionDrawable(new TextureRegion(playUpTexture)),new TextureRegionDrawable(playDownTexture));
-        play.setPosition(WORLD_WIDTH-30, WORLD_HEIGHT-20, Align.center);
-        stageStage.addActor(play);
+        menuUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
+        menuDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
+        ImageButton menuButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(menuUpTexture)), new TextureRegionDrawable(menuDownTexture));
+        menuButton.setPosition(WORLD_WIDTH - 30, WORLD_HEIGHT - 20, Align.center);
+        mainScreen.addActor(menuButton);
 
-        play.addListener(new ActorGestureListener() {
-            @Override
-            public void tap(InputEvent event, float x, float y, int count,
-                            int button) {
+        if(!pauseFlag){
+            menuButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 updatePause();
+                Gdx.input.setInputProcessor(menuScreen);
             }
-        });
+            });
+        }
+    }
+
+    private void showMenu(){
+        menuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        Gdx.input.setInputProcessor(menuScreen);
+
+        quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
+        quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+        ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
+        quitButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2-quitButton.getHeight(), Align.center);
+        menuScreen.addActor(quitButton);
+
+        if(!pauseFlag){
+            quitButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                game.setScreen(new StartScreen(game));
+            }
+            });
+        }
+
+        resumeUpTexture = new Texture(Gdx.files.internal("ResumeUnpressed.png"));
+        resumeDownTexture = new Texture(Gdx.files.internal("ResumePressed.png"));
+        ImageButton resumeButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(resumeUpTexture)),new TextureRegionDrawable(resumeDownTexture));
+        resumeButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2+10, Align.center);
+        menuScreen.addActor(resumeButton);
+
+        if(!pauseFlag){
+            resumeButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                updatePause();
+                Gdx.input.setInputProcessor(mainScreen);
+            }
+            });
+        }
+
+        buttonHeight = resumeButton.getHeight();
+        buttonWidth = resumeButton.getWidth();
     }
 
     /*
@@ -241,6 +304,8 @@ class GameScreen extends ScreenAdapter {
         //Communication Frame
         communicationFrameTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
         profileTexture = new Texture(Gdx.files.internal("Profile_Pack.png"));
+
+        menuBackgroundTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
     }
 
     /*
@@ -273,9 +338,9 @@ class GameScreen extends ScreenAdapter {
     */
     @Override
     public void render(float delta) {
-        clearScreen();	                 //Wipes screen
+        clearScreen();	                //Wipes screen
         setTextureMode();               //Checks if the user changed the status of texturesOnFlag
-        if(textureFlag) {draw();}			//Draws the textures
+        if(textureFlag) {draw();}	    //Draws the textures
 
         setDebugMode();                 //Checks if user changed the status of the debugModeFlag
         if(debugFlag) {                 //If debugMode is on ShapeRender will drawing lines
@@ -284,8 +349,7 @@ class GameScreen extends ScreenAdapter {
             renderBackground();         //Draws Background Wire Frame
             renderCollectible();        //Draws Collectible Wire Frame
         }
-        stageStage.draw();              //Draws the menu Button - Change name
-        if(!pauseFlag){update(delta);}  //Updates the variables of all object if the game is not paused
+        if(!pauseFlag && !endLevelFlag){ update(delta);} //Updates the variables of all object if the game is not paused
     }
 
     /*
@@ -371,14 +435,15 @@ class GameScreen extends ScreenAdapter {
 
     private void createNewCollectible(){
         Collectible newCollectible = new Collectible(collectibleTexture);
-        if(collectibles.isEmpty()){newCollectible.setPosition(WORLD_WIDTH + newCollectible.getRadius());}
-        else{newCollectible.setPosition(WORLD_WIDTH + newCollectible.getRadius());}
+        if(asteroids.size == 1) {newCollectible.setPosition(asteroids.first().getX() + newCollectible.getAsteroidRadius() + GAP_BETWEEN_ASTEROID/2);}
+        else{newCollectible.setPosition(WORLD_WIDTH + newCollectible.getAsteroidRadius());}
+        if(part == PART.PartOne){newCollectible.setCollidingFlag();}
         collectibles.add(newCollectible);
     }
 
     private void checkForNewObjectsNeeded(){
         checkIfNewAsteroidIsNeeded();
-        if(part != PART.PartOne) { checkIfNewCollectibleIsNeeded();}
+        checkIfNewCollectibleIsNeeded();
     }
 
     private void checkIfNewCollectibleIsNeeded(){
@@ -444,7 +509,7 @@ class GameScreen extends ScreenAdapter {
     */
     private void update(float delta){
         //Creation and destruction of new flowers
-        checkForNewObjectsNeeded();
+        if(!stopSpawningFlag) {checkForNewObjectsNeeded();}
         checkForRemovingObject();
 
         //Updates status of variables
@@ -469,7 +534,6 @@ class GameScreen extends ScreenAdapter {
         //Moves from Part 1 to Part 2, turns on commutation window
         if(part == PART.PartOne && asteroidsPassed == ASTEROIDS_PASSED){
             part = PART.PartTwo;
-            asteroids.get(1).markPointClaimed();
             screenOn = true;
         }
         //Moves from Part 2 to Part 3, turns on commutation window
@@ -478,15 +542,22 @@ class GameScreen extends ScreenAdapter {
             screenOn = true;
         }
         //Moves from Part 3 to Part 4, turns on commutation window
-        if(part == PART.PartThree && progressBar.getScore() == GOAL){
+        if(part == PART.PartThree && progressBar.getScore() == GOAL-1){
+            stopSpawningFlag = true;
             part = PART.PartFour;
             screenOn = true;
+        }
+        if(part == PART.PartFour && progressBar.getScore() == GOAL){
+            part = PART.PartFive;
+        }
+        if(part == PART.PartFive){
+            endLevelFlag = true;
         }
 
         //Tells the screen to turn on and which text output to give
         if(part.equals(PART.PartOne) && screenOn){ conversationBox.update(delta, 0);}
         if(part.equals(PART.PartOne) && !screenOn) {conversationBox.update(delta, 1);}
-        if(part.equals(PART.PartTwo) && screenOn){ conversationBox.update(delta, 0);}
+        if(part.equals(PART.PartTwo) && screenOn && collectibles.first().getX() < WORLD_WIDTH && !collectibles.first().getCollidingFlag()){ conversationBox.update(delta, 0);}
         if(part.equals(PART.PartTwo) && !screenOn) {conversationBox.update(delta, 1);}
         if(part.equals(PART.PartThree) && screenOn){ conversationBox.update(delta,0);}
         if(part.equals(PART.PartThree) && !screenOn) {conversationBox.update(delta, 1);}
@@ -557,7 +628,7 @@ class GameScreen extends ScreenAdapter {
     */
     private void updateAsteroids(float delta){ for(Asteroids asteroid : asteroids){ asteroid.update(delta);}}
 
-    private void updateCollectibles(float delta){ for(Collectible collectible : collectibles){ collectible.update(delta, spaceCraft);}}
+    private void updateCollectibles(float delta){ for(Collectible collectible : collectibles){ collectible.update(delta, spaceCraft); } }
 
     /*
     Input: Delta
@@ -565,11 +636,24 @@ class GameScreen extends ScreenAdapter {
     Purpose:
     */
     private void updateScore(){
+        if(!asteroids.isEmpty()) { updateAsteroidScore();}
+        if(!collectibles.isEmpty()) { updateCollectibleScore();}
+    }
+
+    void updateAsteroidScore(){
         Asteroids asteroid = asteroids.first();
-        if(asteroid.getX() <= spaceCraft.getX() && !asteroid.isPointClaimed()) {
+        if (asteroid.getX() <= spaceCraft.getX() && !asteroid.isPointClaimed()) {
+            asteroid.markPointClaimed();
             asteroidsPassed++;
-            if (part != PART.PartOne){progressBar.update();}
         }
+    }
+
+    void updateCollectibleScore(){
+            Collectible collectible = collectibles.first();
+            if (collectible.isColliding(spaceCraft) && !collectible.getCollidingFlag()) {
+                progressBar.update();
+                collectible.setCollidingFlag();
+            }
     }
 
     /*
@@ -622,7 +706,12 @@ class GameScreen extends ScreenAdapter {
         spaceCraft.draw(batch);
         conversationBox.draw(batch);
         if(part != PART.PartOne) {progressBar.draw(batch, glyphLayout, bitmapFont);}
+        if(pauseFlag || endLevelFlag){drawMenuBackground();}
         batch.end();
+
+        //Buttons are not part of the batch
+        if(!pauseFlag){mainScreen.draw();}
+        else{ menuScreen.draw();}
     }
 
     /*
@@ -639,6 +728,9 @@ class GameScreen extends ScreenAdapter {
     Purpose: For every asteroid in the array it call the draw function from that object
     */
     private void drawCollectible(){ for(Collectible collectible : collectibles){ collectible.draw(batch); } }
+
+    private void drawMenuBackground(){ batch.draw(menuBackgroundTexture, menuBackground.x, menuBackground.y, menuBackground.width, menuBackground.height);}
+
 
     /*
     Input: Void
