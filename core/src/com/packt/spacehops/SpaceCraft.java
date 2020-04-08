@@ -32,7 +32,7 @@ class SpaceCraft {
     //Texture and Animation
     private static final int TILE_WIDTH = 32;			//The width of each tile in the texture
     private static final int TILE_HEIGHT = 32;			//The height of each tile in the texture
-    TextureRegion[][] spaceCraftTextures;
+    private TextureRegion[][] spaceCraftTextures;
 
     /*
     Input: Void
