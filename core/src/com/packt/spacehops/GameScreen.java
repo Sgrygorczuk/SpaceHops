@@ -4,6 +4,12 @@ while in an active game environment.
     It creates the wireframe that is used to set up the game.
     Adds textures over the wireframe
     Render all the updates to the objects on screen
+
+
+    Collectible mechanics, to match the distancing between asteroids and collectibles
+        the collectibles are turned invisible at collision and gotten rid off once they leave
+        the screen otherwise they would slowly encroach onto of the asteroids where players
+        can't get to
  */
 
 package com.packt.spacehops;
@@ -34,8 +40,6 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import static sun.misc.Version.print;
-
 class GameScreen extends ScreenAdapter {
 
     /*
@@ -44,15 +48,10 @@ class GameScreen extends ScreenAdapter {
     private static final float WORLD_WIDTH = 320;
     private static final float WORLD_HEIGHT = 480;
 
-    private static final int ASTEROIDS_PASSED = 5;
-    private static final int GOAL = 10;
 
     /*
     Games States dictate how the game should be behaving, we always start in Playing state here
     */
-    private enum LEVEL {LevelOne, LevelTwo, LevelThree, StageFour}
-    private LEVEL level = LEVEL.LevelOne;
-
     private enum PART {PartOne, PartTwo, PartThree, PartFour, PartFive}
     private PART part = PART.PartOne;
 
@@ -71,7 +70,6 @@ class GameScreen extends ScreenAdapter {
     /*
     Textures
      */
-    private Texture background;
     private Texture topAsteroidTexture;
     private Texture bottomAsteroidTexture;
     private Texture earthTexture;
@@ -81,50 +79,42 @@ class GameScreen extends ScreenAdapter {
     private Texture progressBarTexture;
     private Texture profileTexture;
     private Texture progressBarFrameTexture;
-    private Texture menuUpTexture;
-    private Texture menuDownTexture;
-    private Texture quitUpTexture;
-    private Texture quitDownTexture;
-    private Texture resumeUpTexture;
-    private Texture resumeDownTexture;
     private Texture spaceCraftTexture;
     private Texture menuBackgroundTexture;
 
-    private Stage mainScreen;
-    private Stage menuScreen;
-    private Stage nextLevelScreen;
+    private Stage menuButtonScreen;
+    private Stage pauseMenuScreen;
     private float buttonHeight;
     private float buttonWidth;
 
     /*
-    Flappee Bee Object -- Object that deals with Flappee Bee's operations
+    User spaceship object
      */
     private SpaceCraft spaceCraft;
 
     /*
-    Array of Flowers -- Array of flowers that act as our obstacles and the distance between each pair
+    Array of the asteroids and collectibles that the user will encounter
      */
-    private Array<Asteroids> asteroids = new Array<>();
-    private Array<Collectible> collectibles = new Array<>();
-    private static final float GAP_BETWEEN_ASTEROID = 200;
+    private Array<Asteroids> asteroids = new Array<>();         //Array of asteroids
+    private Array<Collectible> collectibles = new Array<>();    //Array of collectibles
 
-    private Planet earth;
+    //Background objects we use
+    private Planet earth;                   //Shows earth and moon
+    private ProgressBar progressBar;        //Progress Bar that show user's progress
+    private Rectangle menuBackground;       //Rectangle that keeps the info of the menu background
+    private ConversationBox conversationBox;//Conversation box that is used to talk to the user
 
-    private ProgressBar progressBar;
+    //Static variables
+    private static final int ASTEROIDS_PASSED = 1;              //Amount of asteroids that need to be passed to move to next part
+    private static final int GOAL = 2;                         //Goal of the level to end
+    private static final float GAP_BETWEEN_ASTEROID = 200;      //Distance between objects
 
-    private Rectangle menuBackground;
+    //Timing variables
+    private static final float MOVE_TIME = 10F;                 //Time that the conversation box stays on screen
+    private float moveTimer = MOVE_TIME;                        //Counter that checks if it reached the end of time
 
-    private ConversationBox conversationBox;
-    private boolean screenOn = true;
-    private static final float MOVE_TIME = 10F;
-    private float moveTimer = MOVE_TIME;
-    private static final float CLICK_TIME = 0.1F;
-    private float clickTimer = CLICK_TIME;
-
-    /*
-    User Info
-     */
-    private int asteroidsPassed = 0;
+    //
+    private int asteroidsPassed = 0;      //In game counter to see how many asteroids have been passed
 
     /*
     Bitmap and GlyphLayout
@@ -135,13 +125,14 @@ class GameScreen extends ScreenAdapter {
     /*
     Flags
      */
-    private boolean debugFlag = false;
-    private boolean textureFlag = true;
-    private boolean clickFlag = true;
-    private boolean pauseFlag = false;
-    private boolean stopSpawningFlag = false;
-    private boolean endLevelFlag = false;
+    private boolean debugFlag = false;          //Tells screen to draw debug wireframe
+    private boolean textureFlag = true;         //Tells screen to draw textures
+    private boolean pauseFlag = false;          //Tells screen to stop updating variables
+    private boolean stopSpawningFlag = false;   //Tells screen to stop creating more asteroids and collectibles
+    private boolean endLevelFlag = false;       //Tells screen that the level is complete and to give the next stage menu
+    private boolean screenOnFlag = true;        //Tells screen that the conversation box is on
 
+    //
     private final Game game;
     GameScreen(Game game) { this.game = game; }
 
@@ -163,7 +154,7 @@ class GameScreen extends ScreenAdapter {
     @Override
     public void show() {
         showCamera();           //Sets up camera through which objects are draw through
-        showMenu();
+        showPauseMenu();
         showMenuButton();       //Sets up menu button that brings up menu and pauses game
         showTexture();          //Connects textures to the images
         showObjects();          //Creates object and passes them the dimensions and textures
@@ -218,36 +209,77 @@ class GameScreen extends ScreenAdapter {
     Purpose: Sets up the button that will pause the game and bring up the menu
     */
     private void showMenuButton(){
-        mainScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
-        Gdx.input.setInputProcessor(mainScreen);
+        //Sets up stage to be screen size
+        menuButtonScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        Gdx.input.setInputProcessor(menuButtonScreen);    //Give it the control
 
-        menuUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
-        menuDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
+        //Sets up textures used by the button
+        Texture menuUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
+        Texture menuDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
+
+        //Creates button and position
         ImageButton menuButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(menuUpTexture)), new TextureRegionDrawable(menuDownTexture));
         menuButton.setPosition(WORLD_WIDTH - 30, WORLD_HEIGHT - 20, Align.center);
-        mainScreen.addActor(menuButton);
+        menuButtonScreen.addActor(menuButton);
 
+        //When clicked opens ip the menu
         if(!pauseFlag){
             menuButton.addListener(new ActorGestureListener() {@Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 updatePause();
-                Gdx.input.setInputProcessor(menuScreen);
+                Gdx.input.setInputProcessor(pauseMenuScreen);
             }
             });
         }
     }
 
-    private void showMenu(){
-        menuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
-        Gdx.input.setInputProcessor(menuScreen);
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the buttons that are in the paused menu
+    */
+    private void showPauseMenu(){
+        /*
+        Set up
+         */
+        //Sets up the stage object
+        pauseMenuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        //Gives it the input
+        Gdx.input.setInputProcessor(pauseMenuScreen);
 
-        quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
-        quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+        //Sets up the textures
+        Texture quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
+        Texture quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+
+        Texture resumeUpTexture = new Texture(Gdx.files.internal("ResumeUnpressed.png"));
+        Texture resumeDownTexture = new Texture(Gdx.files.internal("ResumePressed.png"));
+
+        //Sets up the buttons
         ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
         quitButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2-quitButton.getHeight(), Align.center);
-        menuScreen.addActor(quitButton);
+        pauseMenuScreen.addActor(quitButton);
 
+        ImageButton resumeButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(resumeUpTexture)),new TextureRegionDrawable(resumeDownTexture));
+        resumeButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2+10, Align.center);
+        pauseMenuScreen.addActor(resumeButton);
+
+        /*
+        Listeners
+         */
+
+        //Goes back to the game
+        if(!pauseFlag){
+            resumeButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                updatePause();
+                Gdx.input.setInputProcessor(menuButtonScreen);
+            }
+            });
+        }
+
+        //Quits to main menu
         if(!pauseFlag){
             quitButton.addListener(new ActorGestureListener() {@Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
@@ -257,22 +289,7 @@ class GameScreen extends ScreenAdapter {
             });
         }
 
-        resumeUpTexture = new Texture(Gdx.files.internal("ResumeUnpressed.png"));
-        resumeDownTexture = new Texture(Gdx.files.internal("ResumePressed.png"));
-        ImageButton resumeButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(resumeUpTexture)),new TextureRegionDrawable(resumeDownTexture));
-        resumeButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2+10, Align.center);
-        menuScreen.addActor(resumeButton);
-
-        if(!pauseFlag){
-            resumeButton.addListener(new ActorGestureListener() {@Override
-            public void tap(InputEvent event, float x, float y, int count, int button) {
-                super.tap(event, x, y, count, button);
-                updatePause();
-                Gdx.input.setInputProcessor(mainScreen);
-            }
-            });
-        }
-
+        //Store the heights of the buttons to calculate the background texture size
         buttonHeight = resumeButton.getHeight();
         buttonWidth = resumeButton.getWidth();
     }
@@ -432,7 +449,11 @@ class GameScreen extends ScreenAdapter {
         asteroids.add(newAsteroid);
     }
 
-
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Creates a new collectible, first one is off set to match the distancing along with asteroids
+    */
     private void createNewCollectible(){
         Collectible newCollectible = new Collectible(collectibleTexture);
         if(asteroids.size == 1) {newCollectible.setPosition(asteroids.first().getX() + newCollectible.getAsteroidRadius() + GAP_BETWEEN_ASTEROID/2);}
@@ -441,15 +462,27 @@ class GameScreen extends ScreenAdapter {
         collectibles.add(newCollectible);
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if we need to make either a collectible or asteroid
+    */
     private void checkForNewObjectsNeeded(){
         checkIfNewAsteroidIsNeeded();
         checkIfNewCollectibleIsNeeded();
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if there is need to create a new collectible is need to be created
+    */
     private void checkIfNewCollectibleIsNeeded(){
+        //No collectible exits
         if (collectibles.size == 0) {
             createNewCollectible();
         }
+        //collectible is distance away
         else {
             Collectible collectible = collectibles.peek();
             if (collectible.getX() < WORLD_WIDTH - GAP_BETWEEN_ASTEROID) {
@@ -477,12 +510,21 @@ class GameScreen extends ScreenAdapter {
             }
     }
 
-
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if asteroids or collectibles need ot be destroyed
+    */
     private void checkForRemovingObject(){
         removeAsteroidIfPassed();
         removeCollectible();
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Gets rid of the collectible from array that went past the screen
+    */
     private void removeCollectible(){
         if(collectibles.size > 0){																					//Checks if we have more than 0 flowers
             Collectible firstCollectible = collectibles.first();																//Grabs the first flower
@@ -493,7 +535,7 @@ class GameScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
-    Purpose: Removes flower from array if its off the screen
+    Purpose: Removes asteroids from array if its off the screen
     */
     private void removeAsteroidIfPassed(){
         if(asteroids.size > 0){																					//Checks if we have more than 0 flowers
@@ -517,12 +559,11 @@ class GameScreen extends ScreenAdapter {
                                 //Part of the level
         updateScore();                           //Updates score
         updateCommunicationScreenTime(delta);    //Updates the time that the screen time is on for
-        updateClick(delta);                      //Updates the users ability to click jump button
-        updateSpaceship(delta);                  //Updates the position of the spaceship
+        updateSpaceship();                       //Updates the position of the spaceship
         updateAsteroids(delta);                  //Updates the asteroids
         updateCollectibles(delta);
         updatePlanet();                          //Updates the position of the moons
-        if(checkForDeathCollision()){ restart();}   //Checks for restart
+        if(checkForDeathCollision()){ restart();}//Checks for restart
     }
 
     /*
@@ -534,33 +575,35 @@ class GameScreen extends ScreenAdapter {
         //Moves from Part 1 to Part 2, turns on commutation window
         if(part == PART.PartOne && asteroidsPassed == ASTEROIDS_PASSED){
             part = PART.PartTwo;
-            screenOn = true;
+            screenOnFlag = true;
         }
         //Moves from Part 2 to Part 3, turns on commutation window
         if(part == PART.PartTwo && progressBar.getScore() == 1){
             part = PART.PartThree;
-            screenOn = true;
+            screenOnFlag = true;
         }
         //Moves from Part 3 to Part 4, turns on commutation window
         if(part == PART.PartThree && progressBar.getScore() == GOAL-1){
             stopSpawningFlag = true;
             part = PART.PartFour;
-            screenOn = true;
+            screenOnFlag = true;
         }
         if(part == PART.PartFour && progressBar.getScore() == GOAL){
             part = PART.PartFive;
         }
         if(part == PART.PartFive){
             endLevelFlag = true;
+            Gdx.input.setInputProcessor(pauseMenuScreen);
+
         }
 
         //Tells the screen to turn on and which text output to give
-        if(part.equals(PART.PartOne) && screenOn){ conversationBox.update(delta, 0);}
-        if(part.equals(PART.PartOne) && !screenOn) {conversationBox.update(delta, 1);}
-        if(part.equals(PART.PartTwo) && screenOn && collectibles.first().getX() < WORLD_WIDTH && !collectibles.first().getCollidingFlag()){ conversationBox.update(delta, 0);}
-        if(part.equals(PART.PartTwo) && !screenOn) {conversationBox.update(delta, 1);}
-        if(part.equals(PART.PartThree) && screenOn){ conversationBox.update(delta,0);}
-        if(part.equals(PART.PartThree) && !screenOn) {conversationBox.update(delta, 1);}
+        if(part.equals(PART.PartOne) && screenOnFlag){ conversationBox.update(delta, 0);}
+        if(part.equals(PART.PartOne) && !screenOnFlag) {conversationBox.update(delta, 1);}
+        if(part.equals(PART.PartTwo) && screenOnFlag && collectibles.first().getX() < WORLD_WIDTH && !collectibles.first().getCollidingFlag()){ conversationBox.update(delta, 0);}
+        if(part.equals(PART.PartTwo) && !screenOnFlag) {conversationBox.update(delta, 1);}
+        if(part.equals(PART.PartThree) && screenOnFlag){ conversationBox.update(delta,0);}
+        if(part.equals(PART.PartThree) && !screenOnFlag) {conversationBox.update(delta, 1);}
     }
 
     /*
@@ -572,20 +615,7 @@ class GameScreen extends ScreenAdapter {
         moveTimer -= delta;
         if (moveTimer <= 0) {
             moveTimer = MOVE_TIME;
-            screenOn = false;
-        }
-    }
-
-    /*
-    Input: Delta, timing
-    Output: Void
-    Purpose: Counts down until the user can click jump - MAY GET RID OFF
-    */
-    private void updateClick(float delta){
-        clickTimer -= delta;
-        if (clickTimer <= 0) {
-            clickTimer = CLICK_TIME;
-            clickFlag = true;
+            screenOnFlag = false;
         }
     }
 
@@ -601,11 +631,10 @@ class GameScreen extends ScreenAdapter {
     Output: Void
     Purpose: Updates the position of the spaceship
     */
-    private void updateSpaceship(float delta){
+    private void updateSpaceship(){
         spaceCraft.update();
-        if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE) && clickFlag) {
+        if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             spaceCraft.flyUp();
-            clickFlag = false;
         }
         blockSpaceshipLeavingTheWorld();
     }
@@ -624,23 +653,33 @@ class GameScreen extends ScreenAdapter {
     /*
     Input: Delta
     Output: Void
-    Purpose: Goes through each flower in the array and updates the position
+    Purpose: Goes through each asteroid in the array and updates the position
     */
     private void updateAsteroids(float delta){ for(Asteroids asteroid : asteroids){ asteroid.update(delta);}}
 
+    /*
+    Input: Delta
+    Output: Void
+    Purpose: Goes through each collectible in the array and updates the position
+    */
     private void updateCollectibles(float delta){ for(Collectible collectible : collectibles){ collectible.update(delta, spaceCraft); } }
 
     /*
     Input: Delta
     Output: Void
-    Purpose:
+    Purpose: Checks what is the amount of asteroids passed and collectibles collected
     */
     private void updateScore(){
         if(!asteroids.isEmpty()) { updateAsteroidScore();}
         if(!collectibles.isEmpty()) { updateCollectibleScore();}
     }
 
-    void updateAsteroidScore(){
+    /*
+    Input: Delta
+    Output: Void
+    Purpose: Checks what is the amount of asteroids passed
+    */
+    private void updateAsteroidScore(){
         Asteroids asteroid = asteroids.first();
         if (asteroid.getX() <= spaceCraft.getX() && !asteroid.isPointClaimed()) {
             asteroid.markPointClaimed();
@@ -648,7 +687,12 @@ class GameScreen extends ScreenAdapter {
         }
     }
 
-    void updateCollectibleScore(){
+    /*
+    Input: Delta
+    Output: Void
+    Purpose: Checks if any collectibles have been collected with
+    */
+    private void updateCollectibleScore(){
             Collectible collectible = collectibles.first();
             if (collectible.isColliding(spaceCraft) && !collectible.getCollidingFlag()) {
                 progressBar.update();
@@ -674,7 +718,7 @@ class GameScreen extends ScreenAdapter {
         collectibles.clear();
         asteroidsPassed = 0;
         part = PART.PartOne;
-        screenOn = false;
+        screenOnFlag = true;
         progressBar.restart();
     }
 
@@ -699,19 +743,21 @@ class GameScreen extends ScreenAdapter {
         batch.setTransformMatrix(camera.view);
         //Batch setting up texture
         batch.begin();
-        earth.draw(batch);
-        //batch.draw(background, 0 ,0);
-        drawAsteroid();
-        drawCollectible();
-        spaceCraft.draw(batch);
-        conversationBox.draw(batch);
+        earth.draw(batch);                  //Draws earth
+        drawAsteroid();                     //Draws all asteroids
+        drawCollectible();                  //Draws all collectibles
+        spaceCraft.draw(batch);             //Draws user
+        conversationBox.draw(batch);        //Draws conversation box
+        //While not in part one draws the progress bar
         if(part != PART.PartOne) {progressBar.draw(batch, glyphLayout, bitmapFont);}
+        //Draws menu if paused or level has ended
         if(pauseFlag || endLevelFlag){drawMenuBackground();}
         batch.end();
 
         //Buttons are not part of the batch
-        if(!pauseFlag){mainScreen.draw();}
-        else{ menuScreen.draw();}
+        if(!pauseFlag){menuButtonScreen.draw();}
+        else {pauseMenuScreen.draw();}
+        if(endLevelFlag) {pauseMenuScreen.draw();}
     }
 
     /*
@@ -721,7 +767,6 @@ class GameScreen extends ScreenAdapter {
     */
     private void drawAsteroid(){ for(Asteroids asteroid : asteroids){ asteroid.draw(batch); } }
 
-
     /*
     Input: Void
     Output: Void
@@ -729,6 +774,11 @@ class GameScreen extends ScreenAdapter {
     */
     private void drawCollectible(){ for(Collectible collectible : collectibles){ collectible.draw(batch); } }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Draws the background menu
+    */
     private void drawMenuBackground(){ batch.draw(menuBackgroundTexture, menuBackground.x, menuBackground.y, menuBackground.width, menuBackground.height);}
 
 
