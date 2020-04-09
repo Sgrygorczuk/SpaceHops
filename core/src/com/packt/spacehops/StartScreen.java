@@ -48,7 +48,7 @@ class StartScreen extends ScreenAdapter {
     ImageButton leftBackButton;
     ImageButton rightBackButton;
 
-
+    ImageButton buttonArray[];
 
     String paths[];
 
@@ -70,8 +70,53 @@ class StartScreen extends ScreenAdapter {
         stage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
         Gdx.input.setInputProcessor(stage);
 
+        showMainButtons();
+        showLeftButtons();
+
         currentBackgroundTexture = new Texture(Gdx.files.internal("MainScreen.png"));
 
+        backButtonUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
+        backButtonDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
+        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUpTexture)),
+                new TextureRegionDrawable(backButtonDownTexture));
+        rightBackButton.setPosition(5*WORLD_WIDTH/4, WORLD_HEIGHT/2, Align.center);
+        stage.addActor(rightBackButton);
+
+        rightBackButton.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                setDestination(1);
+                if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
+                    setTexture();
+                    setDirection();
+                    setNewX();
+                    setMovingFlag();
+                }
+            }
+        });
+
+        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
+        buttonArray = new ImageButton[] {adventureButton, levelOneButton, endlessButton, leftBackButton, rightBackButton};
+        showCamera();
+        //Sets up the texture with the images
+        batch = new SpriteBatch();
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the camera through which all the objects are view through
+    */
+    private void showCamera(){
+        camera = new OrthographicCamera();									//Sets a 2D view
+        camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);	//Places the camera in the center of the view port
+        camera.update();													//Updates the camera
+        viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);		//
+    }
+
+
+    void showMainButtons(){
         adventureDownTexture = new Texture(Gdx.files.internal("AdventurePressed.png"));
         adventureUpTexture = new Texture(Gdx.files.internal("AdventureUnpressed.png"));
         adventureButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(adventureUpTexture)),
@@ -85,11 +130,11 @@ class StartScreen extends ScreenAdapter {
                 super.tap(event, x, y, count, button);
                 setDestination(0);
                 if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
-                   setTexture();
-                   setNewX();
-                   setDirection();
-                   setMovingFlag();
-               }
+                    setTexture();
+                    setNewX();
+                    setDirection();
+                    setMovingFlag();
+                }
             }
         });
 
@@ -113,7 +158,10 @@ class StartScreen extends ScreenAdapter {
                 }
             }
         });
+    }
 
+
+    void showLeftButtons(){
         backButtonUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
         backButtonDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
         leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUpTexture)),
@@ -146,46 +194,8 @@ class StartScreen extends ScreenAdapter {
                 super.tap(event, x, y, count, button);
                 game.setScreen(new GameScreen(game));
                 dispose();
-                }
-        });
-
-        backButtonUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
-        backButtonDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
-        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUpTexture)),
-                new TextureRegionDrawable(backButtonDownTexture));
-        rightBackButton.setPosition(5*WORLD_WIDTH/4, WORLD_HEIGHT/2, Align.center);
-        stage.addActor(rightBackButton);
-
-        rightBackButton.addListener(new ActorGestureListener() {
-            @Override
-            public void tap(InputEvent event, float x, float y, int count, int button) {
-                super.tap(event, x, y, count, button);
-                setDestination(1);
-                if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
-                    setTexture();
-                    setDirection();
-                    setNewX();
-                    setMovingFlag();
-                }
             }
         });
-
-        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
-        showCamera();
-        //Sets up the texture with the images
-        batch = new SpriteBatch();
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Sets up the camera through which all the objects are view through
-    */
-    private void showCamera(){
-        camera = new OrthographicCamera();									//Sets a 2D view
-        camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);	//Places the camera in the center of the view port
-        camera.update();													//Updates the camera
-        viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);		//
     }
 
     void setMovingFlag() {movingFlag = !movingFlag;}
@@ -249,22 +259,10 @@ class StartScreen extends ScreenAdapter {
 
     void updateButtonPosition(){
         if(directionFlag) {
-            leftBackButton.setPosition(leftBackButton.getX() + RATE_OF_CHANGE, leftBackButton.getY());
-            rightBackButton.setPosition(rightBackButton.getX() + RATE_OF_CHANGE, rightBackButton.getY());
-
-            adventureButton.setPosition(adventureButton.getX() + RATE_OF_CHANGE, adventureButton.getY());
-            endlessButton.setPosition(endlessButton.getX() + RATE_OF_CHANGE, endlessButton.getY());
-
-            levelOneButton.setPosition(levelOneButton.getX() + RATE_OF_CHANGE, levelOneButton.getY());
+            for(ImageButton button : buttonArray){button.setPosition(button.getX() + RATE_OF_CHANGE, button.getY()); }
         }
         else {
-            leftBackButton.setPosition(leftBackButton.getX() - RATE_OF_CHANGE, leftBackButton.getY());
-            rightBackButton.setPosition(rightBackButton.getX() - RATE_OF_CHANGE, rightBackButton.getY());
-
-            adventureButton.setPosition(adventureButton.getX() - RATE_OF_CHANGE, adventureButton.getY());
-            endlessButton.setPosition(endlessButton.getX() - RATE_OF_CHANGE, endlessButton.getY());
-
-            levelOneButton.setPosition(levelOneButton.getX() - RATE_OF_CHANGE, levelOneButton.getY());
+            for(ImageButton button : buttonArray){button.setPosition(button.getX() - RATE_OF_CHANGE, button.getY()); }
         }
     }
 
