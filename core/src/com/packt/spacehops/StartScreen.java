@@ -41,21 +41,40 @@ class StartScreen extends ScreenAdapter {
     private Texture newBackgroundTexture;
     private Texture backButtonUpTexture;
     private Texture backButtonDownTexture;
+    private Texture mainScreenUpTexture;
+    private Texture mainScreenDownTexture;
+    private Texture sideScreenUpTexture;
+    private Texture sideScreenDownTexture;
+    private Texture sidScreenUnavailableTenure;
+    private Texture backButtonTexture;
 
-    ImageButton adventureButton;
-    ImageButton levelOneButton;
-    ImageButton endlessButton;
-    ImageButton leftBackButton;
-    ImageButton rightBackButton;
+    private ImageButton adventureButton;
+    private ImageButton endlessButton;
+    private ImageButton shipyardButton;
+    private ImageButton settingsButton;
+    private ImageButton adventureLevelOneButton;
+    private ImageButton adventureLevelTwoButton;
+    private ImageButton adventureLevelThreeButton;
+    private ImageButton adventureLevelFourButton;
+    private ImageButton adventureLevelFiveButton;
+    private ImageButton endlessLevelOneButton;
+    private ImageButton endlessLevelTwoButton;
+    private ImageButton endlessLevelThreeButton;
+    private ImageButton endlessLevelFourButton;
+    private ImageButton endlessLevelFiveButton;
+    private ImageButton endlessLevelSixButton;
+    private ImageButton leftBackButton;
+    private ImageButton rightBackButton;
 
-    ImageButton buttonArray[];
+    private ImageButton buttonArray[];
 
-    String paths[];
+    private String paths[];
 
-    float newX = -WORLD_WIDTH;
-    float currentX = 0;
+    private float newX = -WORLD_WIDTH;
+    private float currentX = 0;
 
-    private float RATE_OF_CHANGE = 10;
+    private float RATE_OF_CHANGE = 20;
+    private float BUTTON_SPACING_GAP = 4;
 
     private final Game game;
     StartScreen(Game game) { this.game = game; }
@@ -70,37 +89,41 @@ class StartScreen extends ScreenAdapter {
         stage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
         Gdx.input.setInputProcessor(stage);
 
+        showCamera();
+        showTextures();
         showMainButtons();
         showLeftButtons();
+        showRightButton();
 
+        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
+        buttonArray = new ImageButton[] {adventureButton, endlessButton, settingsButton, shipyardButton,
+                leftBackButton, rightBackButton, adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
+                adventureLevelFourButton, adventureLevelFiveButton, endlessLevelOneButton, endlessLevelTwoButton,
+                endlessLevelThreeButton, endlessLevelFourButton, endlessLevelFourButton, endlessLevelFiveButton,
+                endlessLevelSixButton};
+        batch = new SpriteBatch();
+    }
+
+    private void showTextures(){
         currentBackgroundTexture = new Texture(Gdx.files.internal("MainScreen.png"));
+
+        adventureDownTexture = new Texture(Gdx.files.internal("AdventurePressed.png"));
+        adventureUpTexture = new Texture(Gdx.files.internal("AdventureUnpressed.png"));
+
+        endlessDownTexture = new Texture(Gdx.files.internal("EndlessPressed.png"));
+        endlessUpTexture = new Texture(Gdx.files.internal("EndlessUnpressed.png"));
 
         backButtonUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
         backButtonDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
-        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUpTexture)),
-                new TextureRegionDrawable(backButtonDownTexture));
-        rightBackButton.setPosition(5*WORLD_WIDTH/4, WORLD_HEIGHT/2, Align.center);
-        stage.addActor(rightBackButton);
 
-        rightBackButton.addListener(new ActorGestureListener() {
-            @Override
-            public void tap(InputEvent event, float x, float y, int count, int button) {
-                super.tap(event, x, y, count, button);
-                setDestination(1);
-                if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
-                    setTexture();
-                    setDirection();
-                    setNewX();
-                    setMovingFlag();
-                }
-            }
-        });
+        mainScreenUpTexture = new Texture(Gdx.files.internal("ButtonUnpressed.png"));
+        mainScreenDownTexture = new Texture(Gdx.files.internal("ButtonPressed.png"));
 
-        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
-        buttonArray = new ImageButton[] {adventureButton, levelOneButton, endlessButton, leftBackButton, rightBackButton};
-        showCamera();
-        //Sets up the texture with the images
-        batch = new SpriteBatch();
+        sideScreenUpTexture = new Texture(Gdx.files.internal("LevelButtonUnpressed.png"));
+        sideScreenDownTexture = new Texture(Gdx.files.internal("LevelButtonPressed.png"));
+        sidScreenUnavailableTenure = new Texture(Gdx.files.internal("LevelButtonUnavailable.png"));
+        backButtonTexture = new Texture(Gdx.files.internal("BackButton.png"));
+
     }
 
     /*
@@ -117,56 +140,46 @@ class StartScreen extends ScreenAdapter {
 
 
     void showMainButtons(){
-        adventureDownTexture = new Texture(Gdx.files.internal("AdventurePressed.png"));
-        adventureUpTexture = new Texture(Gdx.files.internal("AdventureUnpressed.png"));
-        adventureButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(adventureUpTexture)),
-                new TextureRegionDrawable(adventureDownTexture));
-        adventureButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/6+adventureButton.getHeight() + 2, Align.center);
-        stage.addActor(adventureButton);
+
+        ImageButton buttons[] = {adventureButton, endlessButton, shipyardButton, settingsButton};
+
+        for(int i = 0; i < buttons.length; i++){
+            buttons[i] =  new ImageButton(new TextureRegionDrawable(mainScreenUpTexture), new TextureRegionDrawable(mainScreenDownTexture));
+            float height = WORLD_HEIGHT/3 - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
+            buttons[i].setPosition(WORLD_WIDTH/2, height, Align.center);
+            stage.addActor(buttons[i]);
+        }
+
+        adventureButton = buttons[0];
+        endlessButton = buttons[1];
+        shipyardButton = buttons[2];
+        settingsButton = buttons[3];
 
         adventureButton.addListener(new ActorGestureListener() {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 setDestination(0);
-                if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
-                    setTexture();
-                    setNewX();
-                    setDirection();
-                    setMovingFlag();
-                }
+                if(initializeSetUpOfNewBackground()) {setUpNewBackground();}
             }
         });
-
-        endlessDownTexture = new Texture(Gdx.files.internal("EndlessPressed.png"));
-        endlessUpTexture = new Texture(Gdx.files.internal("EndlessUnpressed.png"));
-        endlessButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(endlessUpTexture)),
-                new TextureRegionDrawable(endlessDownTexture));
-        endlessButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/6, Align.center);
-        stage.addActor(endlessButton);
 
         endlessButton.addListener(new ActorGestureListener() {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 setDestination(2);
-                if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
-                    setTexture();
-                    setDirection();
-                    setNewX();
-                    setMovingFlag();
-                }
+                if(initializeSetUpOfNewBackground()) {setUpNewBackground();}
             }
         });
+
     }
 
 
     void showLeftButtons(){
-        backButtonUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
-        backButtonDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
-        leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUpTexture)),
-                new TextureRegionDrawable(backButtonDownTexture));
-        leftBackButton.setPosition(-1*WORLD_WIDTH/4, WORLD_HEIGHT/2, Align.center);
+        leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonTexture)),
+                new TextureRegionDrawable(backButtonTexture));
+        leftBackButton.setPosition(-1*WORLD_WIDTH/8, WORLD_HEIGHT/4, Align.center);
         stage.addActor(leftBackButton);
 
         leftBackButton.addListener(new ActorGestureListener() {
@@ -174,21 +187,27 @@ class StartScreen extends ScreenAdapter {
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
                 setDestination(1);
-                if(!movingFlag && destinationFlag != currentScreenPositionFlag) {
-                    setTexture();
-                    setDirection();
-                    setNewX();
-                    setMovingFlag();
-                }
+                if(initializeSetUpOfNewBackground()) {setUpNewBackground();}
             }
         });
 
-        levelOneButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(adventureUpTexture)),
-                new TextureRegionDrawable(adventureDownTexture));
-        levelOneButton.setPosition(-WORLD_WIDTH/2, WORLD_HEIGHT/6+levelOneButton.getHeight() + 2, Align.center);
-        stage.addActor(levelOneButton);
+        ImageButton buttons[] = {adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
+                adventureLevelFourButton, adventureLevelFiveButton};
 
-        levelOneButton.addListener(new ActorGestureListener() {
+        for(int i = 0; i < buttons.length; i++){
+            buttons[i] =  new ImageButton(new TextureRegionDrawable(sideScreenUpTexture), new TextureRegionDrawable(sideScreenDownTexture));
+            float height = WORLD_HEIGHT/3 - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
+            buttons[i].setPosition(-WORLD_WIDTH/2, height, Align.center);
+            stage.addActor(buttons[i]);
+        }
+
+        adventureLevelOneButton = buttons[0];
+        adventureLevelTwoButton = buttons[1];
+        adventureLevelThreeButton = buttons[2];
+        adventureLevelFourButton = buttons[3];
+        adventureLevelFiveButton = buttons[4];
+
+        adventureLevelOneButton.addListener(new ActorGestureListener() {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
@@ -198,8 +217,40 @@ class StartScreen extends ScreenAdapter {
         });
     }
 
-    void setMovingFlag() {movingFlag = !movingFlag;}
+    private void showRightButton(){
+        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonTexture)),
+                new TextureRegionDrawable(backButtonTexture));
+        rightBackButton.setPosition(9*WORLD_WIDTH/8, WORLD_HEIGHT/4, Align.center);
+        stage.addActor(rightBackButton);
 
+        rightBackButton.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                setDestination(1);
+                if(initializeSetUpOfNewBackground()) {setUpNewBackground();}
+            }
+        });
+
+        ImageButton buttons[] = {endlessLevelOneButton, endlessLevelTwoButton, endlessLevelThreeButton,
+        endlessLevelFourButton, endlessLevelFiveButton, endlessLevelSixButton};
+
+        for(int i = 0; i < buttons.length; i++){
+            buttons[i] =  new ImageButton(new TextureRegionDrawable(sideScreenUpTexture), new TextureRegionDrawable(sideScreenDownTexture));
+            float height = WORLD_HEIGHT/3 - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
+            buttons[i].setPosition(3*WORLD_WIDTH/2, height, Align.center);
+            stage.addActor(buttons[i]);
+        }
+
+        endlessLevelOneButton = buttons[0];
+        endlessLevelTwoButton = buttons[1];
+        endlessLevelThreeButton = buttons[2];
+        endlessLevelFourButton = buttons[3];
+        endlessLevelFiveButton = buttons[4];
+        endlessLevelSixButton = buttons[5];
+    }
+
+    void setMovingFlag() {movingFlag = !movingFlag;}
 
     void setDestination(int destination){ destinationFlag = destination;}
 
@@ -213,6 +264,15 @@ class StartScreen extends ScreenAdapter {
     void setNewX(){
         if(directionFlag){ newX = -WORLD_WIDTH;}
         else{newX = WORLD_WIDTH;}
+    }
+
+    boolean initializeSetUpOfNewBackground(){return !movingFlag && destinationFlag != currentScreenPositionFlag;}
+
+    void setUpNewBackground(){
+        setTexture();
+        setDirection();
+        setNewX();
+        setMovingFlag();
     }
 
     void reachedPosition() {
