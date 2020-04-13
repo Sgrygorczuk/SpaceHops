@@ -48,6 +48,12 @@ public class Collectible {
             collectibleCircle.setY(this.y - y);
         }
 
+        void setPosition(float x ,float y){
+            collectibleCircle.setX(x);
+            float offset = MathUtils.random(90);
+            collectibleCircle.setY(y - offset);
+        }
+
         float getX(){return collectibleCircle.x;}
 
         float getRadius(){return COLLECTIBLE_CIRCLE_RADIUS;}
@@ -86,6 +92,8 @@ public class Collectible {
         Purpose: Gives the Screen X coordinate
         */
         void updatePosition(float x){ collectibleCircle.x = x;}
+
+        void updatePosition(){collectibleCircle.x -= 3;}
 
 
     /*

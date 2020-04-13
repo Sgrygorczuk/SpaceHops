@@ -26,21 +26,13 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-class GameScreen extends ScreenAdapter {
+class AdventureLevelOne extends ScreenAdapter {
 
     /*
     Dimensions -- Units the screen has
@@ -80,12 +72,6 @@ class GameScreen extends ScreenAdapter {
     private Texture profileTexture;
     private Texture progressBarFrameTexture;
     private Texture spaceCraftTexture;
-    private Texture menuBackgroundTexture;
-
-    private Stage menuButtonScreen;
-    private Stage pauseMenuScreen;
-    private float buttonHeight;
-    private float buttonWidth;
 
     /*
     User spaceship object
@@ -101,8 +87,8 @@ class GameScreen extends ScreenAdapter {
     //Background objects we use
     private Planet earth;                   //Shows earth and moon
     private ProgressBar progressBar;        //Progress Bar that show user's progress
-    private Rectangle menuBackground;       //Rectangle that keeps the info of the menu background
     private ConversationBox conversationBox;//Conversation box that is used to talk to the user
+    private PauseMenu pauseMenu;            //Pause Menu deals with buttons
 
     //Static variables
     private static final int ASTEROIDS_PASSED = 1;              //Amount of asteroids that need to be passed to move to next part
@@ -127,14 +113,13 @@ class GameScreen extends ScreenAdapter {
      */
     private boolean debugFlag = false;          //Tells screen to draw debug wireframe
     private boolean textureFlag = true;         //Tells screen to draw textures
-    private boolean pauseFlag = false;          //Tells screen to stop updating variables
     private boolean stopSpawningFlag = false;   //Tells screen to stop creating more asteroids and collectibles
     private boolean endLevelFlag = false;       //Tells screen that the level is complete and to give the next stage menu
     private boolean screenOnFlag = true;        //Tells screen that the conversation box is on
 
     //
     private final Game game;
-    GameScreen(Game game) { this.game = game; }
+    AdventureLevelOne(Game game) { this.game = game; }
 
     /*
     Input: The width and height of the screen
@@ -154,8 +139,6 @@ class GameScreen extends ScreenAdapter {
     @Override
     public void show() {
         showCamera();           //Sets up camera through which objects are draw through
-        showPauseMenu();
-        showMenuButton();       //Sets up menu button that brings up menu and pauses game
         showTexture();          //Connects textures to the images
         showObjects();          //Creates object and passes them the dimensions and textures
         showRender();           //Sets up renders that will draw the debug of objects
@@ -183,12 +166,13 @@ class GameScreen extends ScreenAdapter {
         earth = new Planet(150,150,100, earthTexture);
         earth.createMoon(20,moonTexture);
 
+        pauseMenu = new PauseMenu(game);
+        pauseMenu.createNextLevelButton(1);
+
         //Player UI
         progressBar = new ProgressBar(WORLD_WIDTH,WORLD_HEIGHT,progressBarFrameTexture,progressBarTexture);
         progressBar.setGoal(GOAL);
         conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
-
-        menuBackground = new Rectangle(WORLD_WIDTH/2 - buttonWidth/2 - 10, (float) (WORLD_HEIGHT/2 - 1.5*buttonHeight - 10), buttonWidth + 20, 2*buttonHeight + 40);
     }
 
     /*
@@ -201,97 +185,6 @@ class GameScreen extends ScreenAdapter {
         camera.position.set(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 0);	//Places the camera in the center of the view port
         camera.update();													//Updates the camera
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, camera);		//
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Sets up the button that will pause the game and bring up the menu
-    */
-    private void showMenuButton(){
-        //Sets up stage to be screen size
-        menuButtonScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
-        Gdx.input.setInputProcessor(menuButtonScreen);    //Give it the control
-
-        //Sets up textures used by the button
-        Texture menuUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
-        Texture menuDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
-
-        //Creates button and position
-        ImageButton menuButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(menuUpTexture)), new TextureRegionDrawable(menuDownTexture));
-        menuButton.setPosition(WORLD_WIDTH - 30, WORLD_HEIGHT - 20, Align.center);
-        menuButtonScreen.addActor(menuButton);
-
-        //When clicked opens ip the menu
-        if(!pauseFlag){
-            menuButton.addListener(new ActorGestureListener() {@Override
-            public void tap(InputEvent event, float x, float y, int count, int button) {
-                super.tap(event, x, y, count, button);
-                updatePause();
-                Gdx.input.setInputProcessor(pauseMenuScreen);
-            }
-            });
-        }
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Sets up the buttons that are in the paused menu
-    */
-    private void showPauseMenu(){
-        /*
-        Set up
-         */
-        //Sets up the stage object
-        pauseMenuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
-        //Gives it the input
-        Gdx.input.setInputProcessor(pauseMenuScreen);
-
-        //Sets up the textures
-        Texture quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
-        Texture quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
-
-        Texture resumeUpTexture = new Texture(Gdx.files.internal("ResumeUnpressed.png"));
-        Texture resumeDownTexture = new Texture(Gdx.files.internal("ResumePressed.png"));
-
-        //Sets up the buttons
-        ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
-        quitButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2-quitButton.getHeight(), Align.center);
-        pauseMenuScreen.addActor(quitButton);
-
-        ImageButton resumeButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(resumeUpTexture)),new TextureRegionDrawable(resumeDownTexture));
-        resumeButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2+10, Align.center);
-        pauseMenuScreen.addActor(resumeButton);
-
-        /*
-        Listeners
-         */
-
-        //Goes back to the game
-        if(!pauseFlag){
-            resumeButton.addListener(new ActorGestureListener() {@Override
-            public void tap(InputEvent event, float x, float y, int count, int button) {
-                super.tap(event, x, y, count, button);
-                updatePause();
-                Gdx.input.setInputProcessor(menuButtonScreen);
-            }
-            });
-        }
-
-        //Quits to main menu
-        if(!pauseFlag){
-            quitButton.addListener(new ActorGestureListener() {@Override
-            public void tap(InputEvent event, float x, float y, int count, int button) {
-                super.tap(event, x, y, count, button);
-                game.setScreen(new StartScreen(game));
-            }
-            });
-        }
-
-        //Store the heights of the buttons to calculate the background texture size
-        buttonHeight = resumeButton.getHeight();
-        buttonWidth = resumeButton.getWidth();
     }
 
     /*
@@ -321,8 +214,6 @@ class GameScreen extends ScreenAdapter {
         //Communication Frame
         communicationFrameTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
         profileTexture = new Texture(Gdx.files.internal("Profile_Pack.png"));
-
-        menuBackgroundTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
     }
 
     /*
@@ -366,7 +257,7 @@ class GameScreen extends ScreenAdapter {
             renderBackground();         //Draws Background Wire Frame
             renderCollectible();        //Draws Collectible Wire Frame
         }
-        if(!pauseFlag && !endLevelFlag){ update(delta);} //Updates the variables of all object if the game is not paused
+        if(!pauseMenu.getPauseFlag() && !endLevelFlag){ update(delta);} //Updates the variables of all object if the game is not paused
     }
 
     /*
@@ -497,17 +388,17 @@ class GameScreen extends ScreenAdapter {
     Purpose: Checks if there is need to create a new asteroid if does calls createNewAsteroid()
     */
     private void checkIfNewAsteroidIsNeeded(){
-            //If no asteroids on screen exits
-            if (asteroids.size == 0) {
+        //If no asteroids on screen exits
+        if (asteroids.size == 0) {
+            createNewAsteroid();
+        }
+        //If the distance between the world and the new asteroid is enough
+        else {
+            Asteroids asteroid = asteroids.peek();
+            if (asteroid.getX() < WORLD_WIDTH - GAP_BETWEEN_ASTEROID) {
                 createNewAsteroid();
             }
-            //If the distance between the world and the new asteroid is enough
-            else {
-                Asteroids asteroid = asteroids.peek();
-                if (asteroid.getX() < WORLD_WIDTH - GAP_BETWEEN_ASTEROID) {
-                    createNewAsteroid();
-                }
-            }
+        }
     }
 
     /*
@@ -550,13 +441,15 @@ class GameScreen extends ScreenAdapter {
     Purpose: Central function that starts all the other update functions
     */
     private void update(float delta){
+        //If we are leaving the screen we get rid of everything in memory
+        if(pauseMenu.getDisposeFlag()){dispose();}
         //Creation and destruction of new flowers
         if(!stopSpawningFlag) {checkForNewObjectsNeeded();}
         checkForRemovingObject();
 
         //Updates status of variables
         updatePart(delta);      //Checks which part of the level we are in and sets off events when we enter new
-                                //Part of the level
+        //Part of the level
         updateScore();                           //Updates score
         updateCommunicationScreenTime(delta);    //Updates the time that the screen time is on for
         updateSpaceship();                       //Updates the position of the spaceship
@@ -593,7 +486,7 @@ class GameScreen extends ScreenAdapter {
         }
         if(part == PART.PartFive){
             endLevelFlag = true;
-            Gdx.input.setInputProcessor(pauseMenuScreen);
+            Gdx.input.setInputProcessor(pauseMenu.getNextLevelStage());
 
         }
 
@@ -693,19 +586,12 @@ class GameScreen extends ScreenAdapter {
     Purpose: Checks if any collectibles have been collected with
     */
     private void updateCollectibleScore(){
-            Collectible collectible = collectibles.first();
-            if (collectible.isColliding(spaceCraft) && !collectible.getCollidingFlag()) {
-                progressBar.update();
-                collectible.setCollidingFlag();
-            }
+        Collectible collectible = collectibles.first();
+        if (collectible.isColliding(spaceCraft) && !collectible.getCollidingFlag()) {
+            progressBar.update();
+            collectible.setCollidingFlag();
+        }
     }
-
-    /*
-    Input: Delta
-    Output: Void
-    Purpose: Pauses the game
-    */
-    private void updatePause(){ pauseFlag = !pauseFlag; }
 
     /*
     Input: Void
@@ -751,13 +637,13 @@ class GameScreen extends ScreenAdapter {
         //While not in part one draws the progress bar
         if(part != PART.PartOne) {progressBar.draw(batch, glyphLayout, bitmapFont);}
         //Draws menu if paused or level has ended
-        if(pauseFlag || endLevelFlag){drawMenuBackground();}
+        if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         batch.end();
 
         //Buttons are not part of the batch
-        if(!pauseFlag){menuButtonScreen.draw();}
-        else {pauseMenuScreen.draw();}
-        if(endLevelFlag) {pauseMenuScreen.draw();}
+        if(!pauseMenu.getPauseFlag() && !endLevelFlag){pauseMenu.getMenuButtonStage().draw();}
+        else {pauseMenu.getPauseMenuScreen().draw();}
+        if(endLevelFlag) {pauseMenu.getNextLevelStage().draw();}
     }
 
     /*
@@ -777,18 +663,30 @@ class GameScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
-    Purpose: Draws the background menu
-    */
-    private void drawMenuBackground(){ batch.draw(menuBackgroundTexture, menuBackground.x, menuBackground.y, menuBackground.width, menuBackground.height);}
-
-
-    /*
-    Input: Void
-    Output: Void
     Purpose: Updates all the variables on the screen
     */
     private void clearScreen() {
         Gdx.gl.glClearColor(Color.BLACK.r, Color.BLACK.g, Color.BLACK.b, Color.BLACK.a); //Sets color to black
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);										 //Sends it to the buffer
+    }
+
+    /*
+Input: Void
+Output: Void
+Purpose: Destroys everything once we move onto the new screen
+*/
+    @Override
+    public void dispose() {
+        pauseMenu.dispose();
+        topAsteroidTexture.dispose();
+        bottomAsteroidTexture.dispose();
+        earthTexture.dispose();
+        moonTexture.dispose();
+        collectibleTexture.dispose();
+        communicationFrameTexture.dispose();
+        progressBarTexture.dispose();
+        profileTexture.dispose();
+        progressBarFrameTexture.dispose();
+        spaceCraftTexture.dispose();
     }
 }

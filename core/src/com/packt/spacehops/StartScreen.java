@@ -37,10 +37,14 @@ class StartScreen extends ScreenAdapter {
     private Texture sideScreenUpTexture;
     private Texture sideScreenDownTexture;
     private Texture sidScreenUnavailableTenure;
-    private Texture backButtonTexture;
+    private Texture backButtonUnpressedTexture;
+    private Texture backButtonPressedTexture;
+    private Texture doorUpTexture;
+    private Texture doorDownTexture;
 
     //Stage and the buttons it holds
-    private Stage stage;
+    private Stage mainStage;
+    private Stage shipyardStage;
 
     private ImageButton adventureButton;
     private ImageButton endlessButton;
@@ -70,9 +74,12 @@ class StartScreen extends ScreenAdapter {
     //Keeps track of the x value of the current and new backgrounds and we shift between them
     private float newX = -WORLD_WIDTH;
     private float currentX = 0;
+    private float doorUpY;
+    private float doorDownY;
 
     //Static Variables
     private final static float RATE_OF_CHANGE = 20;         //How fast items move left and right
+    private final static float DOOR_RATE_OF_CHANGE = 10;     //How fast doors close and open
     private final static float BUTTON_SPACING_GAP = 6;      //How much space there is between buttons
 
     //Game for changing screens
@@ -85,6 +92,8 @@ class StartScreen extends ScreenAdapter {
     private int destinationFlag = 0;           //1 Center, 0 Left, 2 Right. Where we want to go to.
     private boolean directionFlag = false;     //Moving left = false, moving right = true
     private boolean movingFlag = false;        //Is the screen moving now
+    private int doorFlag = 0;                  //0 - Nothing happening, 1 closing, 2 opening
+    private int locationFlag = 0;             //0 - Main screen, 1 shipyard, 2 setting
 
     /*
     Input: Void
@@ -101,24 +110,17 @@ class StartScreen extends ScreenAdapter {
     */
     public void show(){
         //Sets up stage and tells it to make buttons clickable
-        stage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
-        Gdx.input.setInputProcessor(stage);
+        mainStage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        shipyardStage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        Gdx.input.setInputProcessor(mainStage); //Gives button power to mainStage
 
         showCamera();       //Sets up the camera
         showTextures();     //Sets up texture to be used in future objects
         showMainButtons();  //Creates the main screen buttons and their functionality
         showLeftButtons();  //Creates the left screen buttons and their functionality
         showRightButton();  //Creates the right screen buttons and their functionality
-
-        //Keeps track of the images that the new background is going to be attached to
-        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
-        //Keeps track of all of the buttons that exits with in the first three main screens
-        buttonArray = new ImageButton[] {adventureButton, endlessButton, settingsButton, shipyardButton,
-                leftBackButton, rightBackButton, adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
-                adventureLevelFourButton, adventureLevelFiveButton, endlessLevelOneButton, endlessLevelTwoButton,
-                endlessLevelThreeButton, endlessLevelFourButton, endlessLevelFiveButton, endlessLevelSixButton};
-        //Batch for drawing the textures
-        batch = new SpriteBatch();
+        showShipyardButtons();
+        showInitialize();   //Initializes extra variables
     }
 
     /*
@@ -138,8 +140,12 @@ class StartScreen extends ScreenAdapter {
         sideScreenUpTexture = new Texture(Gdx.files.internal("LevelButtonUnpressed.png"));
         sideScreenDownTexture = new Texture(Gdx.files.internal("LevelButtonPressed.png"));
         sidScreenUnavailableTenure = new Texture(Gdx.files.internal("LevelButtonUnavailable.png"));
-        backButtonTexture = new Texture(Gdx.files.internal("BackButton.png"));
+        backButtonUnpressedTexture = new Texture(Gdx.files.internal("BackButtonUnpressed.png"));
+        backButtonPressedTexture = new Texture(Gdx.files.internal("BackButtonPressed.png"));
 
+        //
+        doorUpTexture = new Texture(Gdx.files.internal("DoorUp.png"));
+        doorDownTexture = new Texture(Gdx.files.internal("DoorDown.png"));
     }
 
     /*
@@ -175,13 +181,13 @@ class StartScreen extends ScreenAdapter {
         //global ones stay null
         //And adds them to stage so that we can dispose of them when leaving screen
         adventureButton = newButtons[0];
-        stage.addActor(adventureButton);
+        mainStage.addActor(adventureButton);
         endlessButton = newButtons[1];
-        stage.addActor(endlessButton);
+        mainStage.addActor(endlessButton);
         shipyardButton = newButtons[2];
-        stage.addActor(shipyardButton);
+        mainStage.addActor(shipyardButton);
         settingsButton = newButtons[3];
-        stage.addActor(settingsButton);
+        mainStage.addActor(settingsButton);
 
         /*
         Listeners
@@ -206,6 +212,16 @@ class StartScreen extends ScreenAdapter {
                 if(initializeSetUpOfNewBackground()) {setUpNewBackground();}
             }
         });
+
+        //Adds listener action that moves the screen to the right
+        shipyardButton.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                setLocationFlag(1);
+                setClosingDoor();
+            }
+        });
     }
 
     /*
@@ -220,10 +236,10 @@ class StartScreen extends ScreenAdapter {
          */
 
         //Creates the back button that moves us to the central screen
-        leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonTexture)),
-                new TextureRegionDrawable(backButtonTexture));
+        leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUnpressedTexture)),
+                new TextureRegionDrawable(backButtonPressedTexture));
         leftBackButton.setPosition(-1*WORLD_WIDTH/8, WORLD_HEIGHT/4, Align.center);
-        stage.addActor(leftBackButton);
+        mainStage.addActor(leftBackButton);
 
         //Sets up array for button initialization in bulk
         ImageButton[] buttons = {adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
@@ -235,15 +251,15 @@ class StartScreen extends ScreenAdapter {
         //Reinitialize them because the ones in the array aren't global
         //And adds them to stage so that we can dispose of them when leaving screen
         adventureLevelOneButton = newButtons[0];
-        stage.addActor(adventureLevelOneButton);
+        mainStage.addActor(adventureLevelOneButton);
         adventureLevelTwoButton = newButtons[1];
-        stage.addActor(adventureLevelTwoButton);
+        mainStage.addActor(adventureLevelTwoButton);
         adventureLevelThreeButton = newButtons[2];
-        stage.addActor(adventureLevelThreeButton);
+        mainStage.addActor(adventureLevelThreeButton);
         adventureLevelFourButton = newButtons[3];
-        stage.addActor(adventureLevelFourButton);
+        mainStage.addActor(adventureLevelFourButton);
         adventureLevelFiveButton = newButtons[4];
-        stage.addActor(adventureLevelFiveButton);
+        mainStage.addActor(adventureLevelFiveButton);
 
         /*
         Listeners
@@ -264,7 +280,17 @@ class StartScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                game.setScreen(new GameScreen(game));
+                game.setScreen(new AdventureLevelOne(game));
+                dispose();
+            }
+        });
+
+        //Turns on level one
+        adventureLevelTwoButton.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                game.setScreen(new AdventureLevelTwo(game));
                 dispose();
             }
         });
@@ -282,10 +308,10 @@ class StartScreen extends ScreenAdapter {
          */
 
         //Sets up the button that takes us back to the central screen
-        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonTexture)),
-                new TextureRegionDrawable(backButtonTexture));
+        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUnpressedTexture)),
+                new TextureRegionDrawable(backButtonPressedTexture));
         rightBackButton.setPosition(9*WORLD_WIDTH/8, WORLD_HEIGHT/4, Align.center);
-        stage.addActor(rightBackButton);
+        mainStage.addActor(rightBackButton);
 
         //Sets up array for bulk initialization of buttons
         ImageButton[] buttons = {endlessLevelOneButton, endlessLevelTwoButton, endlessLevelThreeButton,
@@ -297,17 +323,17 @@ class StartScreen extends ScreenAdapter {
         //Reinitialize the buttons because the ones in the array aren't global
         //And adds them to the stage so they can be disposed of after we leave this screen
         endlessLevelOneButton = newButtons[0];
-        stage.addActor(endlessLevelOneButton);
+        mainStage.addActor(endlessLevelOneButton);
         endlessLevelTwoButton = newButtons[1];
-        stage.addActor(endlessLevelTwoButton);
+        mainStage.addActor(endlessLevelTwoButton);
         endlessLevelThreeButton = newButtons[2];
-        stage.addActor(endlessLevelThreeButton);
+        mainStage.addActor(endlessLevelThreeButton);
         endlessLevelFourButton = newButtons[3];
-        stage.addActor(endlessLevelFourButton);
+        mainStage.addActor(endlessLevelFourButton);
         endlessLevelFiveButton = newButtons[4];
-        stage.addActor(endlessLevelFiveButton);
+        mainStage.addActor(endlessLevelFiveButton);
         endlessLevelSixButton = newButtons[5];
-        stage.addActor(endlessLevelSixButton);
+        mainStage.addActor(endlessLevelSixButton);
 
         /*
         Listeners
@@ -322,6 +348,55 @@ class StartScreen extends ScreenAdapter {
                 if(initializeSetUpOfNewBackground()) {setUpNewBackground();}
             }
         });
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets the buttons, adding in their textures and functionality
+    */
+    private void showShipyardButtons(){
+        /*
+        Set Up
+         */
+
+        //Sets up the button that takes us back to the central screen
+        ImageButton shipyardBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUnpressedTexture)),
+                new TextureRegionDrawable(backButtonPressedTexture));
+        shipyardBackButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/4, Align.center);
+        shipyardStage.addActor(shipyardBackButton);
+
+        //Send the screen back to the central screen
+        shipyardBackButton.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                setLocationFlag(0);
+                setClosingDoor();
+            }
+        });
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets the paths array, the button array so that their positions can be updated and the height
+    of the door textures
+    */
+    private void showInitialize(){
+        //Keeps track of the images that the new background is going to be attached to
+        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
+        //Keeps track of all of the buttons that exits with in the first three main screens
+        buttonArray = new ImageButton[] {adventureButton, endlessButton, settingsButton, shipyardButton,
+                leftBackButton, rightBackButton, adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
+                adventureLevelFourButton, adventureLevelFiveButton, endlessLevelOneButton, endlessLevelTwoButton,
+                endlessLevelThreeButton, endlessLevelFourButton, endlessLevelFiveButton, endlessLevelSixButton};
+
+        //Batch for drawing the textures
+        batch = new SpriteBatch();
+
+        doorUpY = WORLD_HEIGHT;                     //Places upperDoor above screen
+        doorDownY = 0 - doorDownTexture.getHeight();//Places down door below screen
     }
 
     /*
@@ -340,6 +415,56 @@ class StartScreen extends ScreenAdapter {
             buttons[i].setPosition(x, newHeight, Align.center);
         }
         return buttons;
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets the location to be a new screen, Main, Shipyard or settings
+    */
+    private void setLocationFlag(int newLocation){ locationFlag = newLocation;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Tells the screen to behave as the doors are closing
+    */
+    private void setClosingDoor() {doorFlag = 1;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Tells the screen to behave as the doors are opening
+    */
+    private void setOpeningDoor() {doorFlag = 2;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Tells the screen to behave as the doors are closed, nothing is happening
+    */
+    private void setStopDoor() {doorFlag = 0;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Shows shipyard background and buttons
+    */
+    private void setUpShipyard(){
+        currentBackgroundTexture.dispose(); //Gets rid of background
+        currentBackgroundTexture = new Texture(Gdx.files.internal("Shipyard.png"));
+        Gdx.input.setInputProcessor(shipyardStage); //Gives button power to mainStage
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Shows main screen background and buttons
+    */
+    private void setMain(){
+        currentBackgroundTexture.dispose(); //Gets rid of background
+        currentBackgroundTexture = new Texture(Gdx.files.internal(paths[1]));
+        Gdx.input.setInputProcessor(mainStage); //Gives button power to mainStage
     }
 
     /*
@@ -419,6 +544,7 @@ class StartScreen extends ScreenAdapter {
         currentX = 0;   //Places the background at x = 0
     }
 
+
     /*
     Input: Delta, time
     Output: Void
@@ -428,7 +554,7 @@ class StartScreen extends ScreenAdapter {
     public void render(float delta){
         update();           //Updates variables
         draw();             //Draws textures
-        stage.act(delta);   //Checks buttons for clicks
+        mainStage.act(delta);   //Checks buttons for clicks
     }
 
     /*
@@ -443,6 +569,10 @@ class StartScreen extends ScreenAdapter {
         if(movingFlag){
             updateScreenPosition();
             updateButtonPosition();
+        }
+        if(doorFlag != 0){
+            updateDoorPosition();
+            updateDoorState();
         }
     }
 
@@ -480,6 +610,37 @@ class StartScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
+    Purpose: Updates the y position of the doors based on which doorFlag we're in
+    */
+    private void updateDoorPosition(){
+        if(doorFlag == 1) {
+            doorDownY += DOOR_RATE_OF_CHANGE;
+            doorUpY -= DOOR_RATE_OF_CHANGE;
+        }
+        else if(doorFlag == 2) {
+            doorDownY -= DOOR_RATE_OF_CHANGE;
+            doorUpY += DOOR_RATE_OF_CHANGE;
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Switches between closing opening and updates the background when switching
+    */
+    private void updateDoorState(){
+        if(doorFlag == 1 && doorUpY == WORLD_HEIGHT/2 || doorDownY == WORLD_HEIGHT/2){
+            setOpeningDoor();
+            if(locationFlag == 0){ setMain();}
+            else if(locationFlag == 1) {setUpShipyard();}
+            //else if (locationFlag == 2) {setUpSettings();}
+        }
+        else if(doorFlag == 2 && doorDownY == WORLD_HEIGHT || doorDownY == 0 - doorDownTexture.getHeight()){ setStopDoor(); }
+    }
+
+    /*
+    Input: Void
+    Output: Void
     Purpose: Central methods that draws everything
      */
     private void draw(){
@@ -492,9 +653,11 @@ class StartScreen extends ScreenAdapter {
         drawBackground(); //Draws background
         //Draws newBackground if we're moving, otherwise newBackground doesn't exist
         if(movingFlag) {drawMovingBackground();}
+        if(doorFlag != 0){drawDoors();}
         batch.end();
         //Draws horizontal buttons not part of batch
-        stage.draw();
+        if(doorFlag == 0 && locationFlag == 0) {mainStage.draw();}
+        else if(doorFlag == 0 && locationFlag == 1){shipyardStage.draw();}
 
     }
 
@@ -530,11 +693,22 @@ class StartScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
+    Purpose: Draws the door textures
+    */
+    private void drawDoors(){
+        batch.draw(doorUpTexture, 0, doorUpY);
+        batch.draw(doorDownTexture, 0, doorDownY);
+    }
+
+    /*
+    Input: Void
+    Output: Void
     Purpose: Destroys everything once we move onto the new screen
     */
     @Override
     public void dispose() {
-        stage.dispose();
+        mainStage.dispose();
+        shipyardStage.dispose();
         currentBackgroundTexture.dispose();
         newBackgroundTexture.dispose();
         mainScreenUpTexture.dispose();
@@ -542,7 +716,10 @@ class StartScreen extends ScreenAdapter {
         sideScreenUpTexture.dispose();
         sideScreenDownTexture.dispose();
         sidScreenUnavailableTenure.dispose();
-        backButtonTexture.dispose();
+        backButtonUnpressedTexture.dispose();
+        backButtonPressedTexture.dispose();
+        doorUpTexture.dispose();
+        doorDownTexture.dispose();
     }
 
 }

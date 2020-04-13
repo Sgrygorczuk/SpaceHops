@@ -121,7 +121,7 @@ class Asteroids{
     /*
     Input: Void
     Output: Void
-    Purpose: Checks if flappy has intersected with any of the rectangles or circles
+    Purpose: Checks if spacecraft has intersected with any of the rectangles or circles
     */
     boolean isColliding(SpaceCraft spaceCraft) {
         Circle spaceCraftCollisionCircle = spaceCraft.getCollisionCircle();

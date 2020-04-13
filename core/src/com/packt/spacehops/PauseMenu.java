@@ -1,0 +1,296 @@
+package com.packt.spacehops;
+
+import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ActorGestureListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+
+class PauseMenu {
+
+    /*
+    Dimensions -- Units the screen has
+    */
+    private static final float WORLD_WIDTH = 320;
+    private static final float WORLD_HEIGHT = 480;
+
+    //Buttons and stages
+    private Stage menuButtonScreen;     //Button that leads to the pause menu
+    private Stage pauseMenuScreen;      //Buttons in the pause menu
+    private Stage nextLevelStage;
+    private float buttonHeight;         //Height of the buttons so that we can
+    private float buttonWidth;
+
+    private Rectangle menuBackground;       //Rectangle that keeps the info of the menu background
+    private Texture pauseMenuTexture;       //Texture of the menu's background
+
+    //TO BE CHANGED TO NEXT LEVEL
+    private Texture nextLevelUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
+    private Texture nextLevelDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+
+    private boolean pauseFlag = false;      //Tells us if the game is paused
+    private boolean disposeFlag = false;    //Tells us if we need to get rid off the assets
+
+    private Game game;                      //Sends up to different screen
+
+    /*
+    Input: Game, object used to set up screens
+    Output: Void
+    Purpose: Constructors, creates all the necessary objects
+    */
+    PauseMenu(Game game){
+        this.game = game;
+        showMenuButton();                   //Creates the menu button
+        showPauseMenu();                    //Creates the buttons inside the pause menu
+        showNextLevelMenu();
+        showMenuBackground();               //Sets up vars to display the background of the pause menu
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Tells game if it's paused or not
+    */
+    boolean getPauseFlag(){return pauseFlag;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Tells game to release the assets
+    */
+    boolean getDisposeFlag(){return disposeFlag;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Provide the game with the menu button
+    */
+    Stage getMenuButtonStage(){return menuButtonScreen;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Provide the game with the pause menu buttons
+    */
+    Stage getPauseMenuScreen(){return pauseMenuScreen;}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Provide the game with the pause menu buttons
+    */
+    Stage getNextLevelStage(){return nextLevelStage;}
+
+    /*
+    Input: Delta
+    Output: Void
+    Purpose: Pauses the game
+    */
+    private void updatePause(){ pauseFlag = !pauseFlag; }
+
+    /*
+    Input: Delta
+    Output: Void
+    Purpose: Sets up the background of the pause and next level menu
+    */
+    private void showMenuBackground(){
+        menuBackground = new Rectangle(WORLD_WIDTH/2 - buttonWidth/2 - 10,
+                (float) (WORLD_HEIGHT/2 - 1.5 * buttonHeight - 10),
+                buttonWidth + 20, 2 * buttonHeight + 40);
+
+        pauseMenuTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the button that will pause the game and bring up the menu
+    */
+    private void showMenuButton(){
+        //Sets up stage to be screen size
+        menuButtonScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+        Gdx.input.setInputProcessor(menuButtonScreen);    //Give it the control
+
+        //Sets up textures used by the button
+        Texture menuUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
+        Texture menuDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
+
+        //Creates button and position
+        ImageButton menuButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(menuUpTexture)), new TextureRegionDrawable(menuDownTexture));
+        menuButton.setPosition(WORLD_WIDTH - 30, WORLD_HEIGHT - 20, Align.center);
+        menuButtonScreen.addActor(menuButton);
+
+        //When clicked opens ip the menu
+        if(!pauseFlag){
+            menuButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                updatePause();
+                Gdx.input.setInputProcessor(pauseMenuScreen);
+            }
+            });
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the buttons that are in the paused menu
+    */
+    private void showPauseMenu(){
+        /*
+        Set up
+         */
+        //Sets up the stage object
+        pauseMenuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+
+        //Sets up the textures
+        Texture quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
+        Texture quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+
+        Texture resumeUpTexture = new Texture(Gdx.files.internal("ResumeUnpressed.png"));
+        Texture resumeDownTexture = new Texture(Gdx.files.internal("ResumePressed.png"));
+
+        //Sets up the buttons
+        ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
+        quitButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2-quitButton.getHeight(), Align.center);
+        pauseMenuScreen.addActor(quitButton);
+
+        ImageButton resumeButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(resumeUpTexture)),new TextureRegionDrawable(resumeDownTexture));
+        resumeButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2+10, Align.center);
+        pauseMenuScreen.addActor(resumeButton);
+
+        /*
+        Listeners
+         */
+
+        //Goes back to the game
+        if(!pauseFlag){
+            resumeButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                updatePause();
+                Gdx.input.setInputProcessor(menuButtonScreen);
+            }
+            });
+        }
+
+        //Quits to main menu
+        if(!pauseFlag){
+            quitButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                game.setScreen(new StartScreen(game));
+                disposeFlag = !disposeFlag;
+                dispose();
+            }
+            });
+        }
+
+        //Store the heights of the buttons to calculate the background texture size
+        buttonHeight = resumeButton.getHeight();
+        buttonWidth = resumeButton.getWidth();
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets up the the Stage and quit button for next level menu
+    */
+    private void showNextLevelMenu(){
+        /*
+        Set up
+         */
+        //Sets up the stage object
+        nextLevelStage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
+
+        //Sets up the textures
+        Texture quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
+        Texture quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+
+        //Sets up the buttons
+        ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
+        quitButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2-quitButton.getHeight(), Align.center);
+        nextLevelStage.addActor(quitButton);
+
+        /*
+        Listeners
+         */
+
+        //Quits to main menu
+        if(!pauseFlag){
+            quitButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                game.setScreen(new StartScreen(game));
+                disposeFlag = !disposeFlag;
+                dispose();
+            }
+            });
+        }
+    }
+
+    /*
+    Input: Choice of which level this should send the player to
+    Output: Void
+    Purpose: Sets up the button that will send us to next level
+    */
+    void createNextLevelButton(final int levelChoice){
+        ImageButton nextLevelButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(nextLevelUpTexture)),
+                new TextureRegionDrawable(nextLevelDownTexture));
+        nextLevelButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/2+10, Align.center);
+        nextLevelStage.addActor(nextLevelButton);
+
+        //Goes back to the game
+        if(!pauseFlag){
+            nextLevelButton.addListener(new ActorGestureListener() {@Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                chooseLevel(levelChoice);
+                disposeFlag = !disposeFlag;
+                dispose();
+            }
+            });
+        }
+    }
+
+    /*
+    Input: Choice of level
+    Output: Void
+    Purpose: Picks the level we're going to
+    */
+    private void chooseLevel(int levelChoice){
+        switch (levelChoice) {
+            case 0: {game.setScreen(new AdventureLevelOne(game));}
+            case 1: {game.setScreen(new AdventureLevelTwo(game));}
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Draws the background menu
+    */
+    void draw(SpriteBatch batch){ batch.draw(pauseMenuTexture, menuBackground.x, menuBackground.y, menuBackground.width, menuBackground.height);}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Releases the assets
+    */
+    void dispose() {
+        menuButtonScreen.dispose();
+        pauseMenuScreen.dispose();
+        pauseMenuTexture.dispose();
+    }
+
+}

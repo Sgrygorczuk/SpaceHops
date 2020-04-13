@@ -107,6 +107,8 @@ class SpaceCraft {
         updatePosition(x, y + ySpeed);
     }
 
+    void restart(){ ySpeed = 0; }
+
     /*
     Input: Void
     Output: Void
