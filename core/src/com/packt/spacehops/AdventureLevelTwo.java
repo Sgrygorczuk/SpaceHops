@@ -17,6 +17,7 @@ package com.packt.spacehops;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -25,6 +26,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
@@ -62,11 +64,13 @@ class AdventureLevelTwo extends ScreenAdapter {
     Textures
      */
     private Texture spaceCraftTexture;
-    private Texture menuBackgroundTexture;
+    private Texture collectibleTexture;
     private Texture scaleTexture;
     private Texture floorBorderTexture;
     private Texture ceilingBorderTexture;
     private Texture dragonHeadTexture;
+    private Texture progressBarTexture;
+    private Texture progressBarFrameTexture;
 
     /*
     User spaceship object
@@ -82,6 +86,7 @@ class AdventureLevelTwo extends ScreenAdapter {
 
     //Background objects we use
     private PauseMenu pauseMenu;
+    private ProgressBar progressBar;        //Progress Bar that show user's progress
 
     //Timing variables
     private static final float MOVE_TIME = 10F;                 //Time that the conversation box stays on screen
@@ -96,8 +101,9 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Flags
      */
-    private boolean debugFlag = true;          //Tells screen to draw debug wireframe
-    private boolean textureFlag = false;         //Tells screen to draw textures
+    private static final int GOAL = 3;           //Goal of the level to end
+    private boolean debugFlag = false;          //Tells screen to draw debug wireframe
+    private boolean textureFlag = true;         //Tells screen to draw textures
     private boolean stopSpawningFlag = false;   //Tells screen to stop creating more asteroids and collectibles
     private boolean endLevelFlag = false;       //Tells screen that the level is complete and to give the next stage menu
     private boolean screenOnFlag = true;        //Tells screen that the conversation box is on
@@ -147,8 +153,12 @@ class AdventureLevelTwo extends ScreenAdapter {
         spaceCraft = new SpaceCraft(spaceCraftTexture);
         spaceCraft.updatePosition(2*WORLD_WIDTH/3, WORLD_HEIGHT/2);
 
-        dragon = new Dragon(dragonHeadTexture, scaleTexture);
+        dragon = new Dragon(dragonHeadTexture, scaleTexture, scaleTexture);
         pauseMenu = new PauseMenu(game);
+
+        //Player UI
+        progressBar = new ProgressBar(WORLD_WIDTH,WORLD_HEIGHT,progressBarFrameTexture,progressBarTexture);
+        progressBar.setGoal(GOAL);
     }
 
     /*
@@ -173,13 +183,18 @@ class AdventureLevelTwo extends ScreenAdapter {
         //Spaceship
         spaceCraftTexture = new Texture(Gdx.files.internal("SpaceshipPack.png"));
 
-        menuBackgroundTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
-
         floorBorderTexture = new Texture(Gdx.files.internal("Top.png"));
         ceilingBorderTexture = new Texture(Gdx.files.internal("Bottom.png"));
 
+        //Collectible
+        collectibleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
+
         dragonHeadTexture = new Texture(Gdx.files.internal("DragonHead.png"));
         scaleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
+
+        //Progress Bar
+        progressBarTexture = new Texture(Gdx.files.internal("Progress.png"));
+        progressBarFrameTexture = new Texture(Gdx.files.internal("ProgressBar.png"));
     }
 
     /*
@@ -301,8 +316,9 @@ class AdventureLevelTwo extends ScreenAdapter {
     private void update(float delta){
         //If we are leaving the screen we get rid of everything in memory
         if(pauseMenu.getDisposeFlag()){dispose();}
-        updateForDeath();
+        updateCheckForDeath();
         updateDragon(delta);
+        updateCollectibles();
         updateSpaceBoarders();
         updateSpaceship();                       //Updates the position of the spaceship
     }
@@ -314,7 +330,7 @@ class AdventureLevelTwo extends ScreenAdapter {
     */
     private void updateSpaceship(){
         spaceCraft.update();
-        if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+        if(Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             spaceCraft.flyUp();
         }
         blockSpaceshipLeavingTheWorld();
@@ -330,11 +346,53 @@ class AdventureLevelTwo extends ScreenAdapter {
         spaceCraft.updatePosition(spaceCraft.getX(), MathUtils.clamp(spaceCraft.getY(), spaceCraft.getRadius(), WORLD_HEIGHT - spaceCraft.getRadius()) );
     }
 
-    private void updateForDeath(){
+    private void updateCheckForDeath(){
         for (SpaceBorder spaceBorder : spaceBorders) {
             if(spaceBorder.isColliding(spaceCraft)){restart();}
         }
         if(dragon.isColliding(spaceCraft)){restart();}
+    }
+
+    private void updateDragon(float delta){ dragon.update(delta);}
+
+    private void updateCollectibles(){
+        checkIfNewCollectibleIsNeeded();
+        removeCollectible();
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if there is need to create a new asteroid if does calls createNewAsteroid()
+    */
+    private void checkIfNewCollectibleIsNeeded(){
+        if(dragon.getX() + dragon.getWidth()/2 >= 2*WORLD_WIDTH/3 && collectibles.size < 1){
+            createNewCollectible();
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Creates a new set of boarders
+    */
+    private void createNewCollectible(){
+        Collectible collectible = new Collectible(collectibleTexture);
+        collectible.setPosition(2*WORLD_WIDTH/3,dragon.getCentralY() + dragon.getHeight());
+        collectible.setRadius(10f);
+        collectibles.add(collectible);
+    }
+
+    private void removeCollectible(){
+        for(Collectible collectible : collectibles){
+            if (collectible.isColliding(spaceCraft)) {
+                collectibles.removeValue(collectible,true);
+                progressBar.update();
+                if(progressBar.getScore() == GOAL){
+                    Gdx.input.setInputProcessor(pauseMenu.getNextLevelStage());
+                    endLevelFlag = true;}
+            }
+        }
     }
 
     private void updateSpaceBoarders(){
@@ -342,8 +400,6 @@ class AdventureLevelTwo extends ScreenAdapter {
         checkIfNewBoarderIsNeeded();
         updateSpaceBoarderPosition();
     }
-
-    private void updateDragon(float delta){ dragon.updatePosition(delta);}
 
     /*
     Input: Void
@@ -390,6 +446,8 @@ class AdventureLevelTwo extends ScreenAdapter {
     private void restart(){
         spaceCraft.updatePosition(2*WORLD_WIDTH/3,WORLD_HEIGHT/2);
         spaceCraft.restart();
+        dragon.restart();
+        progressBar.restart();
         collectibles.clear();
         part = PART.PartOne;
         screenOnFlag = true;
@@ -407,14 +465,16 @@ class AdventureLevelTwo extends ScreenAdapter {
         //Batch setting up texture
         batch.begin();
         spaceCraft.draw(batch);
+        for (Collectible collectible : collectibles){collectible.draw(batch);}
         for(SpaceBorder spaceBorder : spaceBorders){spaceBorder.draw(batch);}
-        if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         dragon.draw(batch);
+        progressBar.draw(batch, glyphLayout, bitmapFont);
+        if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         batch.end();
         //Buttons are not part of the batch
         if(!pauseMenu.getPauseFlag() && !endLevelFlag){pauseMenu.getMenuButtonStage().draw();}
         else {pauseMenu.getPauseMenuScreen().draw();}
-        if(endLevelFlag) {pauseMenu.getPauseMenuScreen().draw();}
+        if(endLevelFlag) {pauseMenu.getNextLevelStage().draw();}
     }
 
     /*

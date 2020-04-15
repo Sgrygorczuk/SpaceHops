@@ -54,7 +54,14 @@ public class Collectible {
             collectibleCircle.setY(y - offset);
         }
 
+        void setPortionNoOffset(float x ,float y){
+            collectibleCircle.setX(x);
+            collectibleCircle.setY(y);
+        }
+
         float getX(){return collectibleCircle.x;}
+
+        float getY(){return collectibleCircle.y;}
 
         float getRadius(){return COLLECTIBLE_CIRCLE_RADIUS;}
 
@@ -72,6 +79,15 @@ public class Collectible {
 
     void setCollidingFlag(){ collectedFlag = true;}
 
+    void setRadius(){
+        float radius = MathUtils.random(ASTEROID_RADIUS/2, ASTEROID_RADIUS);
+        collectibleCircle.radius = radius;
+    }
+
+    void setRadius(float radius){
+        collectibleCircle.radius = radius;
+    }
+
     boolean getCollidingFlag(){return collectedFlag;}
 
 
@@ -81,17 +97,21 @@ public class Collectible {
         Purpose: Method that the object calls when being updated by the render
         */
         void update(float delta, SpaceCraft spaceCraft){
-            animationTime += delta;
+            updateAnimation(delta);
             isColliding(spaceCraft);
             updatePosition(collectibleCircle.x-(MAX_SPEED_PER_SECOND * delta));
         }
+
+        void updateAnimation(float delta){animationTime += delta;}
+
+        Circle getCollisionCircle(){return collectibleCircle;}
 
         /*
         Input: Void
         Output: Void
         Purpose: Gives the Screen X coordinate
         */
-        void updatePosition(float x){ collectibleCircle.x = x;}
+        private void updatePosition(float x){ collectibleCircle.x = x;}
 
         void updatePosition(){collectibleCircle.x -= 3;}
 
@@ -113,7 +133,8 @@ public class Collectible {
         void draw(SpriteBatch batch){
             if(!collectedFlag) {
                 TextureRegion collectibleTexture = (TextureRegion) animation.getKeyFrame(animationTime);
-                batch.draw(collectibleTexture, collectibleCircle.x  - COLLECTIBLE_CIRCLE_RADIUS, collectibleCircle.y - COLLECTIBLE_CIRCLE_RADIUS);}
+                batch.draw(collectibleTexture, collectibleCircle.x  - collectibleCircle.radius, collectibleCircle.y - collectibleCircle.radius,
+                        2*collectibleCircle.radius, 2*collectibleCircle.radius);}
         }
 
         void drawDebug(ShapeRenderer shapeRenderer){ if(!collectedFlag) { shapeRenderer.circle(collectibleCircle.x, collectibleCircle.y, collectibleCircle.radius); }}}
