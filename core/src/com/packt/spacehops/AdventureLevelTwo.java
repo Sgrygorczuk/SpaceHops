@@ -30,6 +30,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -66,11 +67,13 @@ class AdventureLevelTwo extends ScreenAdapter {
     private Texture spaceCraftTexture;
     private Texture collectibleTexture;
     private Texture scaleTexture;
-    private Texture floorBorderTexture;
-    private Texture ceilingBorderTexture;
+    private Texture fireTexture;
+    private Texture borderTexture;
     private Texture dragonHeadTexture;
     private Texture progressBarTexture;
     private Texture progressBarFrameTexture;
+    private Texture backgroundTexture;
+    private Texture portalLineTexture;
 
     /*
     User spaceship object
@@ -83,6 +86,7 @@ class AdventureLevelTwo extends ScreenAdapter {
      */
     private Array<SpaceBorder> spaceBorders = new Array<>();         //Array of asteroids
     private Array<Collectible> collectibles = new Array<>();    //Array of collectibles
+    private Array<Rectangle> portalLines = new Array<>();
 
     //Background objects we use
     private PauseMenu pauseMenu;
@@ -153,7 +157,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         spaceCraft = new SpaceCraft(spaceCraftTexture);
         spaceCraft.updatePosition(2*WORLD_WIDTH/3, WORLD_HEIGHT/2);
 
-        dragon = new Dragon(dragonHeadTexture, scaleTexture, scaleTexture);
+        dragon = new Dragon(dragonHeadTexture, scaleTexture, fireTexture);
         pauseMenu = new PauseMenu(game);
 
         //Player UI
@@ -183,14 +187,19 @@ class AdventureLevelTwo extends ScreenAdapter {
         //Spaceship
         spaceCraftTexture = new Texture(Gdx.files.internal("SpaceshipPack.png"));
 
-        floorBorderTexture = new Texture(Gdx.files.internal("Top.png"));
-        ceilingBorderTexture = new Texture(Gdx.files.internal("Bottom.png"));
+        borderTexture = new Texture(Gdx.files.internal("CloudBoarder.png"));
 
         //Collectible
         collectibleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
 
-        dragonHeadTexture = new Texture(Gdx.files.internal("DragonHead.png"));
-        scaleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
+        dragonHeadTexture = new Texture(Gdx.files.internal("DragonPack.png"));
+        fireTexture = new Texture(Gdx.files.internal("CloudPack.png"));
+        scaleTexture = new Texture(Gdx.files.internal("TearPack.png"));
+
+
+        //Background
+        backgroundTexture = new Texture(Gdx.files.internal("PortalBackground.png"));
+        portalLineTexture = new Texture(Gdx.files.internal("PortalLines.png"));
 
         //Progress Bar
         progressBarTexture = new Texture(Gdx.files.internal("Progress.png"));
@@ -277,6 +286,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         shapeRendererBackground.setProjectionMatrix(camera.projection);                 //Screen set up camera
         shapeRendererBackground.setTransformMatrix(camera.view);                        //Screen set up camera
         shapeRendererBackground.begin(ShapeRenderer.ShapeType.Line);                    //Starts to draw
+        drawDebugPortalLine(shapeRendererBackground);
         shapeRendererBackground.end();
     }
 
@@ -316,6 +326,7 @@ class AdventureLevelTwo extends ScreenAdapter {
     private void update(float delta){
         //If we are leaving the screen we get rid of everything in memory
         if(pauseMenu.getDisposeFlag()){dispose();}
+        updatePortalLines();
         updateCheckForDeath();
         updateDragon(delta);
         updateCollectibles();
@@ -360,6 +371,55 @@ class AdventureLevelTwo extends ScreenAdapter {
         removeCollectible();
     }
 
+    private void updatePortalLines(){
+        System.out.println(portalLines.size);
+        checkIfNewPortalLineIsNeeded();
+        updatePortalLinePosition();
+        removePortalLine();
+    }
+
+    private void checkIfNewPortalLineIsNeeded(){ if(portalLines.size < 5){createPortalLine();} }
+
+    private void createPortalLine(){
+        float height = MathUtils.random(1,3);
+        float width = MathUtils.random(16,64);
+        float y = MathUtils.random(WORLD_HEIGHT);
+        Rectangle rectangle = new Rectangle(WORLD_WIDTH, y, width,height);
+        portalLines.add(rectangle);
+    }
+
+    private void updatePortalLinePosition(){
+        if(portalLines.size > 0){
+            for (Rectangle portalLine : portalLines){
+                System.out.println(portalLine.x);
+                portalLine.x -= WORLD_WIDTH/portalLine.width;
+            }
+        }
+    }
+
+    private void removePortalLine(){
+        if(portalLines.size > 0) {
+            for (Rectangle portalLine : portalLines) {
+                if (portalLine.x + portalLine.width < 0) { portalLines.removeValue(portalLine, true);} }
+        }
+    }
+
+    private void drawDebugPortalLine(ShapeRenderer shapeRenderer){
+        if(portalLines.size > 0){
+            for (Rectangle portalLine : portalLines){
+                shapeRenderer.rect(portalLine.x, portalLine.y, portalLine.width, portalLine.height);
+            }
+        }
+    }
+
+    private void drawPortalLine(SpriteBatch batch){
+        if(portalLines.size > 0){
+            for (Rectangle portalLine : portalLines){
+                batch.draw(portalLineTexture, portalLine.x, portalLine.y, portalLine.width, portalLine.height);
+            }
+        }
+    }
+
     /*
     Input: Void
     Output: Void
@@ -378,7 +438,7 @@ class AdventureLevelTwo extends ScreenAdapter {
     */
     private void createNewCollectible(){
         Collectible collectible = new Collectible(collectibleTexture);
-        collectible.setPosition(2*WORLD_WIDTH/3,dragon.getCentralY() + dragon.getHeight());
+        collectible.setPosition(2*WORLD_WIDTH/3,dragon.getCentralY() + dragon.getHeight(), dragon.getHeight());
         collectible.setRadius(10f);
         collectibles.add(collectible);
     }
@@ -407,7 +467,7 @@ class AdventureLevelTwo extends ScreenAdapter {
     Purpose: Creates a new set of boarders
     */
     private void createNewSpaceBoarder(float initialX){
-        SpaceBorder spaceBorder = new SpaceBorder(initialX, floorBorderTexture, ceilingBorderTexture);
+        SpaceBorder spaceBorder = new SpaceBorder(initialX, borderTexture, borderTexture);
         spaceBorders.add(spaceBorder);
     }
 
@@ -464,6 +524,8 @@ class AdventureLevelTwo extends ScreenAdapter {
         batch.setTransformMatrix(camera.view);
         //Batch setting up texture
         batch.begin();
+        batch.draw(backgroundTexture, 0 ,0, WORLD_WIDTH, WORLD_HEIGHT);
+        drawPortalLine(batch);
         spaceCraft.draw(batch);
         for (Collectible collectible : collectibles){collectible.draw(batch);}
         for(SpaceBorder spaceBorder : spaceBorders){spaceBorder.draw(batch);}

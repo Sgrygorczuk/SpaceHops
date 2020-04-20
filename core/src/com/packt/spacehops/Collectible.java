@@ -48,9 +48,9 @@ public class Collectible {
             collectibleCircle.setY(this.y - y);
         }
 
-        void setPosition(float x ,float y){
+        void setPosition(float x ,float y, float height){
             collectibleCircle.setX(x);
-            float offset = MathUtils.random(90);
+            float offset = MathUtils.random(height);
             collectibleCircle.setY(y - offset);
         }
 
@@ -80,7 +80,7 @@ public class Collectible {
     void setCollidingFlag(){ collectedFlag = true;}
 
     void setRadius(){
-        float radius = MathUtils.random(ASTEROID_RADIUS/2, ASTEROID_RADIUS);
+        float radius = MathUtils.random(ASTEROID_RADIUS/4, ASTEROID_RADIUS/2);
         collectibleCircle.radius = radius;
     }
 

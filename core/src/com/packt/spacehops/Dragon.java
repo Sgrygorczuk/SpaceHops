@@ -6,7 +6,9 @@ attacking with fire attacks and biting the user
 package com.packt.spacehops;
 
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
@@ -75,8 +77,19 @@ class Dragon {
 
     //Textures
     private Texture scaleTexture;
-    private Texture headTexture;
+    private TextureRegion[][] headTexture;
     private Texture bulletTexture;
+
+    //Texture and Animation
+    private static final int HEAD_TILE_WIDTH = 120;			//The width of each tile in the texture
+    private static final int HEAD_TILE_HEIGHT = 98;			//The height of each tile in the texture
+    private static final float FRAME_DURATION = 0.1f;	//How long each tile lasts on screen
+    private static final float EYE_FRAME_DURATION = .25f;
+    private float animationTime = 0;
+    private final Animation eyeAnimation;
+    private final Animation mouthAnimation;
+
+    private boolean animationFlag = false; //False = Eye, True = Mouth
 
     /*
     Input: Textures for head, bullet and scales
@@ -88,9 +101,16 @@ class Dragon {
         this.head = new Rectangle(-HEAD_WIDTH, 240, HEAD_WIDTH, HEAD_HEIGHT);
         this.horn = new Rectangle(-HEAD_WIDTH, 240, HORN_WIDTH, HEAD_HEIGHT + HORN_HEIGHT);
 
+        headTexture = new TextureRegion(head).split(HEAD_TILE_WIDTH, HEAD_TILE_HEIGHT); //Breaks down the texture into tiles
+        this.eyeAnimation = new Animation<>(EYE_FRAME_DURATION, headTexture[0][0], headTexture[1][1],
+                headTexture[1][2], headTexture[1][3]);
+        this.eyeAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        this.mouthAnimation = new Animation<>(FRAME_DURATION, headTexture[0][0], headTexture[0][1],
+                headTexture[0][2], headTexture[0][3], headTexture[1][0]);
+        this.mouthAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+
         //Sets up textures
         bulletTexture = bullet;
-        headTexture = head;
         scaleTexture = scale;
     }
 
@@ -132,9 +152,13 @@ class Dragon {
         if(modeFlag == -1 && head.x > HEAD_WIDTH - 10){modeFlag = 0;}
         //MODE 0 is the dragon idling on the left side of the screen
         else if (modeFlag == 0){
+                if(mouthAnimation.getKeyFrame(animationTime) != headTexture[0][0]) {animationTime += delta;}
+                else { animationFlag = false; }
+                if(!animationFlag){animationTime += delta;}
                 moveTimer -= delta;
                 if (moveTimer <= 0) {
                     moveTimer = MOVE_TIME;
+                    animationFlag = true;
                     modeFlag = 1;
                 }
             }
@@ -142,6 +166,7 @@ class Dragon {
         //Dragons is about to attack, has random chance of shooting fire or biting
         else if(modeFlag == 1){
                 prepTimer -= delta;
+                if(mouthAnimation.getKeyFrame(animationTime) != headTexture[1][0]) {animationTime += delta;}
                 if (prepTimer <= 0) {
                     prepTimer = PREP_TIME;
                     int mode = MathUtils.random(2,3); //Choose the attack type
@@ -192,12 +217,14 @@ class Dragon {
         }
         //Biting
         else if(modeFlag == 3){
+            animationTime += delta;
             updateMovement();                           //Updates the which direction its going in
             updateHorizontalMomentOscillatingY();       //Updates y position
             moveXForward();                           //Updates x position
         }
         //Returning
         else if(modeFlag == 4) {
+            animationTime += delta;
             updateMovement();                           //Updates the which direction its going in
             updateHorizontalMomentOscillatingY();       //Updates y position
             moveXBackwards();                             //Updates x position
@@ -335,10 +362,12 @@ class Dragon {
     Purpose: Creates new scale to be displayed
     */
     private void createScale(){
-        Collectible scale = new Collectible(scaleTexture);
-        scale.setPosition(head.x, horn.y + horn.height); //Random point behind the head
-        scale.setRadius();  //Random size
-        scales.add(scale);  //Adds it to the array
+        if(scales.size < 10) {
+            Collectible scale = new Collectible(scaleTexture);
+            scale.setRadius();  //Random size
+            scale.setPosition(head.x - scale.getRadius(), head.getY() + head.height, head.height); //Random point behind the head
+            scales.add(scale);  //Adds it to the array
+        }
     }
 
     /*
@@ -375,7 +404,7 @@ class Dragon {
     private void removeScale(){
         if(scales.size > 0) {
             for (Collectible scale : scales) {
-                if (scale.getX() < 0) { scales.removeValue(scale, true); }}
+                if (scale.getX() + scale.getRadius() < 0) { scales.removeValue(scale, true); }}
         }
     }
 
@@ -408,9 +437,9 @@ class Dragon {
     */
     private void createBullets(){
             for(int i = 0; i < 3; i++) {
-                Collectible bullet = new Collectible(scaleTexture);
+                Collectible bullet = new Collectible(bulletTexture);
                 bullet.setRadius(8f);
-                bullet.setPortionNoOffset(head.x + head.width, y + head.height / 2);
+                bullet.setPortionNoOffset(head.x + head.width - 15, y + head.height / 2 - 5);
                 bullets.add(bullet);
             }
     }
@@ -468,7 +497,14 @@ class Dragon {
     }
 
     void draw(SpriteBatch batch) {
-        batch.draw(headTexture, head.x, head.y);
+        TextureRegion headTexture;
+        if(animationFlag) {
+            headTexture = (TextureRegion) mouthAnimation.getKeyFrame(animationTime);
+        }
+        else{
+            headTexture = (TextureRegion) eyeAnimation.getKeyFrame(animationTime);
+        }
+        batch.draw(headTexture, head.x - 30, head.y - 8);
         for (Collectible scale : scales){scale.draw(batch);}
         for (Collectible bullet : bullets){bullet.draw(batch);}
     }
