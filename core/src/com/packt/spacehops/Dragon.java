@@ -27,6 +27,7 @@ class Dragon {
     //Rectangles that hold the head of snake positions
     private final Rectangle horn;
     private final Rectangle head;
+    private final Rectangle eyeLaser;
 
     //Array of scales that flow off the dragon
     private Array<Collectible> scales = new Array<>();
@@ -74,11 +75,15 @@ class Dragon {
     //Interval at which bullets are shot out
     private static final float SHOOT_TIME = 0.2F;
     private float shootTimer = SHOOT_TIME;
+    //Interval at which bullets are shot out
+    private static final float LASER_TIME = 1F;
+    private float laserTimer = LASER_TIME;
 
     //Textures
     private Texture scaleTexture;
     private TextureRegion[][] headTexture;
     private Texture bulletTexture;
+    private Texture laserTexture;
 
     //Texture and Animation
     private static final int HEAD_TILE_WIDTH = 120;			//The width of each tile in the texture
@@ -89,6 +94,7 @@ class Dragon {
     private final Animation eyeAnimation;
     private final Animation mouthAnimation;
 
+    private boolean eyeLaserFlag = true; //True = Star Shooting, False = Stop Shooting
     private boolean animationFlag = false; //False = Eye, True = Mouth
 
     /*
@@ -96,22 +102,24 @@ class Dragon {
     Output: Void
     Purpose: Constructor makes necessary shapes and sets up textures
     */
-    Dragon(Texture head, Texture scale, Texture bullet){
+    Dragon(Texture headTexture, Texture scaleTexture, Texture bulletTexture, Texture laserTexture){
         //Sets up the
-        this.head = new Rectangle(-HEAD_WIDTH, 240, HEAD_WIDTH, HEAD_HEIGHT);
-        this.horn = new Rectangle(-HEAD_WIDTH, 240, HORN_WIDTH, HEAD_HEIGHT + HORN_HEIGHT);
+        head = new Rectangle(-HEAD_WIDTH, 240, HEAD_WIDTH, HEAD_HEIGHT);
+        horn = new Rectangle(-HEAD_WIDTH, 240, HORN_WIDTH, HEAD_HEIGHT + HORN_HEIGHT);
+        eyeLaser = new Rectangle(-HEAD_WIDTH, 240+HORN_HEIGHT-11, 0, 22);
 
-        headTexture = new TextureRegion(head).split(HEAD_TILE_WIDTH, HEAD_TILE_HEIGHT); //Breaks down the texture into tiles
-        this.eyeAnimation = new Animation<>(EYE_FRAME_DURATION, headTexture[0][0], headTexture[1][1],
-                headTexture[1][2], headTexture[1][3]);
+        this.headTexture = new TextureRegion(headTexture).split(HEAD_TILE_WIDTH, HEAD_TILE_HEIGHT); //Breaks down the texture into tiles
+        this.eyeAnimation = new Animation<>(EYE_FRAME_DURATION, this.headTexture[0][0], this.headTexture[1][1],
+                this.headTexture[1][2], this.headTexture[1][3]);
         this.eyeAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
-        this.mouthAnimation = new Animation<>(FRAME_DURATION, headTexture[0][0], headTexture[0][1],
-                headTexture[0][2], headTexture[0][3], headTexture[1][0]);
+        this.mouthAnimation = new Animation<>(FRAME_DURATION, this.headTexture[0][0], this.headTexture[0][1],
+                this.headTexture[0][2], this.headTexture[0][3], this.headTexture[1][0]);
         this.mouthAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
 
         //Sets up textures
-        bulletTexture = bullet;
-        scaleTexture = scale;
+        this.bulletTexture = bulletTexture;
+        this.scaleTexture = scaleTexture;
+        this.laserTexture = laserTexture;
     }
 
     /*
@@ -152,8 +160,11 @@ class Dragon {
         if(modeFlag == -1 && head.x > HEAD_WIDTH - 10){modeFlag = 0;}
         //MODE 0 is the dragon idling on the left side of the screen
         else if (modeFlag == 0){
+                //Resets the frame to have the whale have it's mouth closed
                 if(mouthAnimation.getKeyFrame(animationTime) != headTexture[0][0]) {animationTime += delta;}
+                //If it is closed start up the eye closing animation
                 else { animationFlag = false; }
+                //If eye closing is set to happen cycle through the frames
                 if(!animationFlag){animationTime += delta;}
                 moveTimer -= delta;
                 if (moveTimer <= 0) {
@@ -166,11 +177,16 @@ class Dragon {
         //Dragons is about to attack, has random chance of shooting fire or biting
         else if(modeFlag == 1){
                 prepTimer -= delta;
+                //Open the mouth
                 if(mouthAnimation.getKeyFrame(animationTime) != headTexture[1][0]) {animationTime += delta;}
                 if (prepTimer <= 0) {
                     prepTimer = PREP_TIME;
-                    int mode = MathUtils.random(2,3); //Choose the attack type
+                    int mode = MathUtils.random(2,4); //Choose the attack type
                     setUpMinAndMax();                  //Sets up bounds
+                    eyeLaser.height = 22;
+                    eyeLaser.x = horn.x + horn.width/2;
+                    eyeLaser.y = horn.y + horn.height - 22;
+                    eyeLaserFlag = true;
                     modeFlag = mode;
                 }
              }
@@ -190,12 +206,17 @@ class Dragon {
                 modeFlag = 0;
             }
         }
+        else if(modeFlag == 3) {
+            if(!eyeLaserFlag && eyeLaser.width == 0){
+                modeFlag = 0;
+            }
+        }
         //MODE 3 moves the dragon in for a bite
-        else if(modeFlag == 3 && head.x >= ATTACK_X-head.x){
-            modeFlag = 4;
+        else if(modeFlag == 4 && head.x >= ATTACK_X-head.x){
+            modeFlag = 5;
         }
         //Returns the dragon back to idle position once back on left side of the screen
-        else if(modeFlag == 4 && head.x <= 30){modeFlag = 0;}
+        else if(modeFlag == 5 && head.x <= 30){modeFlag = 0;}
     }
 
     /*
@@ -215,15 +236,18 @@ class Dragon {
             updateXOscillatingDirection();              //Updates the X movement direction
             updateOscillating();                        //Updates x and y positions
         }
-        //Biting
         else if(modeFlag == 3){
+            updateEyeLaserPosition(delta);
+        }
+        //Biting
+        else if(modeFlag == 4){
             animationTime += delta;
             updateMovement();                           //Updates the which direction its going in
             updateHorizontalMomentOscillatingY();       //Updates y position
             moveXForward();                           //Updates x position
         }
         //Returning
-        else if(modeFlag == 4) {
+        else if(modeFlag == 5) {
             animationTime += delta;
             updateMovement();                           //Updates the which direction its going in
             updateHorizontalMomentOscillatingY();       //Updates y position
@@ -429,7 +453,6 @@ class Dragon {
             for(Collectible bullet : bullets){bullet.updateAnimation(delta);}
         }
     }
-
     /*
     Input: Void
     Output: Void
@@ -470,10 +493,34 @@ class Dragon {
         }
     }
 
+    private void updateEyeLaserPosition(float delta){
+        if(eyeLaserFlag){ eyeLaser.width += 5;}
+        else {
+            if (eyeLaser.height > 0) {
+                eyeLaser.height -= 2;
+                eyeLaser.y += 1;
+                eyeLaser.width -= 5;
+            }
+            else {
+                eyeLaser.height = 0;
+                eyeLaser.width = 0;
+            }
+        }
+        if(eyeLaser.width + eyeLaser.x >= 320){
+            laserTimer -= delta;
+            if (laserTimer <= 0) {
+                laserTimer = LASER_TIME;
+                eyeLaserFlag = !eyeLaserFlag;
+            }
+        }
+    }
+
+
     void restart(){
         scales.clear();
         bullets.clear();
         modeFlag = -1;
+        eyeLaser.width = 0;
         head.x = -HEAD_WIDTH;
         head.y = HEAD_HEIGHT;
         horn.x = -HEAD_WIDTH;
@@ -493,7 +540,9 @@ class Dragon {
                 return true;
             }
         }
-        return Intersector.overlaps(spaceCraftCollisionCircle, head);
+        return Intersector.overlaps(spaceCraftCollisionCircle, head) ||
+                Intersector.overlaps(spaceCraftCollisionCircle, horn) ||
+                Intersector.overlaps(spaceCraftCollisionCircle, eyeLaser);
     }
 
     void draw(SpriteBatch batch) {
@@ -505,6 +554,7 @@ class Dragon {
             headTexture = (TextureRegion) eyeAnimation.getKeyFrame(animationTime);
         }
         batch.draw(headTexture, head.x - 30, head.y - 8);
+        batch.draw(laserTexture, eyeLaser.x, eyeLaser.y, eyeLaser.width, eyeLaser.height);
         for (Collectible scale : scales){scale.draw(batch);}
         for (Collectible bullet : bullets){bullet.draw(batch);}
     }
@@ -518,6 +568,7 @@ class Dragon {
     void drawDebug(ShapeRenderer shapeRenderer) {
         shapeRenderer.rect(horn.x, horn.y, horn.width, horn.height);
         shapeRenderer.rect(head.x, head.y,  head.width, head.height);
+        shapeRenderer.rect(eyeLaser.x, eyeLaser.y, eyeLaser.width, eyeLaser.height);
         for (Collectible bullet : bullets){bullet.drawDebug(shapeRenderer);}
         for (Collectible scale : scales){scale.drawDebug(shapeRenderer);}
     }

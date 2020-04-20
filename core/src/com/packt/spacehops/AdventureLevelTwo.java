@@ -157,7 +157,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         spaceCraft = new SpaceCraft(spaceCraftTexture);
         spaceCraft.updatePosition(2*WORLD_WIDTH/3, WORLD_HEIGHT/2);
 
-        dragon = new Dragon(dragonHeadTexture, scaleTexture, fireTexture);
+        dragon = new Dragon(dragonHeadTexture, scaleTexture, fireTexture, progressBarTexture);
         pauseMenu = new PauseMenu(game);
 
         //Player UI
