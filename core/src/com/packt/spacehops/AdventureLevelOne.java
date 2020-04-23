@@ -67,9 +67,9 @@ class AdventureLevelOne extends ScreenAdapter {
     private Texture earthTexture;
     private Texture moonTexture;
     private Texture collectibleTexture;
-    private Texture communicationFrameTexture;
     private Texture progressBarTexture;
     private Texture profileTexture;
+    private Texture communicationFrameTexture;
     private Texture progressBarFrameTexture;
     private Texture spaceCraftTexture;
 
@@ -92,7 +92,7 @@ class AdventureLevelOne extends ScreenAdapter {
 
     //Static variables
     private static final int ASTEROIDS_PASSED = 1;              //Amount of asteroids that need to be passed to move to next part
-    private static final int GOAL = 2;                         //Goal of the level to end
+    private static final int GOAL = 10;                         //Goal of the level to end
     private static final float GAP_BETWEEN_ASTEROID = 200;      //Distance between objects
 
     //Timing variables
@@ -526,7 +526,7 @@ class AdventureLevelOne extends ScreenAdapter {
     */
     private void updateSpaceship(){
         spaceCraft.update();
-        if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+        if(Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
             spaceCraft.flyUp();
         }
         blockSpaceshipLeavingTheWorld();

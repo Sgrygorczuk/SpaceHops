@@ -68,18 +68,23 @@ class AdventureLevelTwo extends ScreenAdapter {
     private Texture collectibleTexture;
     private Texture scaleTexture;
     private Texture fireTexture;
+    private Texture laserTexture;
     private Texture borderTexture;
     private Texture dragonHeadTexture;
     private Texture progressBarTexture;
     private Texture progressBarFrameTexture;
     private Texture backgroundTexture;
     private Texture portalLineTexture;
+    private Texture profileTexture;
+    private Texture communicationFrameTexture;
+    private Texture sputnikTexture;
 
     /*
     User spaceship object
      */
     private SpaceCraft spaceCraft;
     private Dragon dragon;
+    private ConversationBox conversationBox;//Conversation box that is used to talk to the user
 
     /*
     Array of the asteroids and collectibles that the user will encounter
@@ -105,12 +110,13 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Flags
      */
-    private static final int GOAL = 3;           //Goal of the level to end
+    private static final int GOAL = 10;           //Goal of the level to end
     private boolean debugFlag = false;          //Tells screen to draw debug wireframe
     private boolean textureFlag = true;         //Tells screen to draw textures
     private boolean stopSpawningFlag = false;   //Tells screen to stop creating more asteroids and collectibles
     private boolean endLevelFlag = false;       //Tells screen that the level is complete and to give the next stage menu
     private boolean screenOnFlag = true;        //Tells screen that the conversation box is on
+    private boolean sputnikAliveFlag = true;
 
     //
     private final Game game;
@@ -157,7 +163,9 @@ class AdventureLevelTwo extends ScreenAdapter {
         spaceCraft = new SpaceCraft(spaceCraftTexture);
         spaceCraft.updatePosition(2*WORLD_WIDTH/3, WORLD_HEIGHT/2);
 
-        dragon = new Dragon(dragonHeadTexture, scaleTexture, fireTexture, progressBarTexture);
+        conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
+
+        dragon = new Dragon(dragonHeadTexture, scaleTexture, fireTexture, laserTexture);
         pauseMenu = new PauseMenu(game);
 
         //Player UI
@@ -193,17 +201,23 @@ class AdventureLevelTwo extends ScreenAdapter {
         collectibleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
 
         dragonHeadTexture = new Texture(Gdx.files.internal("DragonPack.png"));
+        laserTexture = new Texture(Gdx.files.internal("Laser.png"));
         fireTexture = new Texture(Gdx.files.internal("CloudPack.png"));
         scaleTexture = new Texture(Gdx.files.internal("TearPack.png"));
-
 
         //Background
         backgroundTexture = new Texture(Gdx.files.internal("PortalBackground.png"));
         portalLineTexture = new Texture(Gdx.files.internal("PortalLines.png"));
 
+        //Communication Frame
+        communicationFrameTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
+        profileTexture = new Texture(Gdx.files.internal("RussianPack.png"));
+
         //Progress Bar
         progressBarTexture = new Texture(Gdx.files.internal("Progress.png"));
         progressBarFrameTexture = new Texture(Gdx.files.internal("ProgressBar.png"));
+
+        sputnikTexture = new Texture(Gdx.files.internal("Spudnik.png"));
     }
 
     /*
@@ -326,12 +340,63 @@ class AdventureLevelTwo extends ScreenAdapter {
     private void update(float delta){
         //If we are leaving the screen we get rid of everything in memory
         if(pauseMenu.getDisposeFlag()){dispose();}
+        updateSputnik();
+        updateCommunicationScreenTime(delta);
+        updatePart(delta);
         updatePortalLines();
         updateCheckForDeath();
         updateDragon(delta);
         updateCollectibles();
         updateSpaceBoarders();
         updateSpaceship();                       //Updates the position of the spaceship
+    }
+
+    private void updateSputnik(){ if(dragon.getX() + dragon.getWidth() >= WORLD_WIDTH/4 + sputnikTexture.getWidth()){sputnikAliveFlag = false;} }
+
+    /*
+Input: Delta, timing
+Output: Void
+Purpose: Checks for what stage of the level we are and sets off appropriate events that correspond
+*/
+    private void updatePart(float delta){
+        //Moves from Part 1 to Part 2, turns on commutation window
+        if(part == PART.PartOne && !screenOnFlag){ screenOnFlag = true;}
+        else if(part == PART.PartOne && moveTimer-delta <= 0){
+            part = PART.PartTwo;
+            dragon.setStart();}
+        //Moves from Part 2 to Part 3, turns on commutation window
+        if(part == PART.PartTwo && progressBar.getScore() == 3){
+            part = PART.PartThree;
+            dragon.setPhase(1);
+            screenOnFlag = true;
+        }
+        if(part == PART.PartThree && progressBar.getScore() == 6){
+            part = PART.PartFour;
+            dragon.setPhase(2);
+            screenOnFlag = true;
+        }
+        if(part == PART.PartFour && progressBar.getScore() == 9){
+            part = PART.PartFive;
+            screenOnFlag = true;
+        }
+
+        //Tells the screen to turn on and which text output to give
+        if(screenOnFlag){ conversationBox.update(delta, 0);}
+        else{conversationBox.update(delta, 1);}
+
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Counts down until the communication screen turns off
+    */
+    private void updateCommunicationScreenTime(float delta) {
+        moveTimer -= delta;
+        if (moveTimer <= 0) {
+            moveTimer = MOVE_TIME;
+            screenOnFlag = false;
+        }
     }
 
     /*
@@ -497,7 +562,6 @@ class AdventureLevelTwo extends ScreenAdapter {
 
     private void updateSpaceBoarderPosition(){ for(SpaceBorder spaceBorder : spaceBorders){ spaceBorder.updatePosition(); }}
 
-
     /*
     Input: Void
     Output: Void
@@ -510,6 +574,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         progressBar.restart();
         collectibles.clear();
         part = PART.PartOne;
+        moveTimer = MOVE_TIME;
         screenOnFlag = true;
     }
 
@@ -530,6 +595,8 @@ class AdventureLevelTwo extends ScreenAdapter {
         for (Collectible collectible : collectibles){collectible.draw(batch);}
         for(SpaceBorder spaceBorder : spaceBorders){spaceBorder.draw(batch);}
         dragon.draw(batch);
+        if(sputnikAliveFlag){batch.draw(sputnikTexture, WORLD_WIDTH/4, 240);}
+        conversationBox.draw(batch);        //Draws conversation box
         progressBar.draw(batch, glyphLayout, bitmapFont);
         if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         batch.end();

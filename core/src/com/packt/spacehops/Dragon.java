@@ -23,6 +23,7 @@ class Dragon {
     private static final float HEAD_HEIGHT = 2*90/3f;
     private static final float HORN_WIDTH = 90/4f;
     private static final float HORN_HEIGHT = 90/3f;
+    private static final float LASER_HEIGHT = 14;
 
     //Rectangles that hold the head of snake positions
     private final Rectangle horn;
@@ -33,10 +34,6 @@ class Dragon {
     private Array<Collectible> scales = new Array<>();
     //Bullets that the dragon shoots
     private Array<Collectible> bullets = new Array<>();
-
-    //-1 Enter
-    //0 Moving up and down, 1 prepare for attacking, 12 attacking, 3 coming back
-    private int modeFlag = -1;
 
     //Bounds why which the dragon moves around during phase 0
     private static final float OSCILLATING_Y_MAX = 440 - HEAD_HEIGHT;
@@ -64,7 +61,7 @@ class Dragon {
 
     //Timing variables
     //Timing variable for how long it's idling
-    private static final float MOVE_TIME = 5F;
+    private static float MOVE_TIME = 5F;
     private float moveTimer = MOVE_TIME;
     //A pause time for user to get that dragon is going to attack
     private static final float PREP_TIME = 1F;
@@ -91,11 +88,20 @@ class Dragon {
     private static final float FRAME_DURATION = 0.1f;	//How long each tile lasts on screen
     private static final float EYE_FRAME_DURATION = .25f;
     private float animationTime = 0;
+    private float laserAnimationTime = 0;
     private final Animation eyeAnimation;
+    private final Animation laserAnimation;
     private final Animation mouthAnimation;
 
     private boolean eyeLaserFlag = true; //True = Star Shooting, False = Stop Shooting
     private boolean animationFlag = false; //False = Eye, True = Mouth
+    private boolean modeLockedInFlag = false;
+    //-2 Nothing, -1 Enter
+    //0 Moving up and down, 1 prepare for attacking, 12 attacking, 3 coming back
+    private int modeFlag = -2;
+    private int futureModeFlag = 2;
+    private int phaseFlag = 0;
+    private int attackCounterFlag = 0;
 
     /*
     Input: Textures for head, bullet and scales
@@ -106,20 +112,25 @@ class Dragon {
         //Sets up the
         head = new Rectangle(-HEAD_WIDTH, 240, HEAD_WIDTH, HEAD_HEIGHT);
         horn = new Rectangle(-HEAD_WIDTH, 240, HORN_WIDTH, HEAD_HEIGHT + HORN_HEIGHT);
-        eyeLaser = new Rectangle(-HEAD_WIDTH, 240+HORN_HEIGHT-11, 0, 22);
-
-        this.headTexture = new TextureRegion(headTexture).split(HEAD_TILE_WIDTH, HEAD_TILE_HEIGHT); //Breaks down the texture into tiles
-        this.eyeAnimation = new Animation<>(EYE_FRAME_DURATION, this.headTexture[0][0], this.headTexture[1][1],
-                this.headTexture[1][2], this.headTexture[1][3]);
-        this.eyeAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
-        this.mouthAnimation = new Animation<>(FRAME_DURATION, this.headTexture[0][0], this.headTexture[0][1],
-                this.headTexture[0][2], this.headTexture[0][3], this.headTexture[1][0]);
-        this.mouthAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+        eyeLaser = new Rectangle(-HEAD_WIDTH, 240+HORN_HEIGHT-LASER_HEIGHT/2, 0, LASER_HEIGHT);
 
         //Sets up textures
         this.bulletTexture = bulletTexture;
         this.scaleTexture = scaleTexture;
         this.laserTexture = laserTexture;
+        this.headTexture = new TextureRegion(headTexture).split(HEAD_TILE_WIDTH, HEAD_TILE_HEIGHT); //Breaks down the texture into tiles
+
+        eyeAnimation = new Animation<>(EYE_FRAME_DURATION, this.headTexture[0][0], this.headTexture[1][1],
+                this.headTexture[1][2], this.headTexture[1][3]);
+        eyeAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+
+        mouthAnimation = new Animation<>(FRAME_DURATION, this.headTexture[0][0], this.headTexture[0][1],
+                this.headTexture[0][2], this.headTexture[0][3], this.headTexture[1][0]);
+        mouthAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
+
+        laserAnimation = new Animation<>(EYE_FRAME_DURATION, this.headTexture[0][0], this.headTexture[2][0],
+                this.headTexture[2][1], this.headTexture[2][2]);
+        mouthAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
     }
 
     /*
@@ -150,6 +161,16 @@ class Dragon {
     */
     float getWidth(){return HEAD_WIDTH;}
 
+    void setStart(){modeFlag = -1;}
+
+    void setPhase(int phase){
+        phaseFlag = phase;
+        if(phase == 0){ MOVE_TIME = 5F; }
+        else if(phase == 1){ MOVE_TIME = 3F; }
+        else{ MOVE_TIME = 1.5F; }
+    }
+
+
     /*
     Input: Delta, timing
     Output: Void
@@ -157,9 +178,15 @@ class Dragon {
     */
     private void updateMode(float delta) {
         //MODE -1 is dragon entering the screen
-        if(modeFlag == -1 && head.x > HEAD_WIDTH - 10){modeFlag = 0;}
+        if(modeFlag == -1 && head.x > HEAD_WIDTH - 10){
+            modeFlag = 0;
+            animationTime = 0;
+        }
+        else if(modeFlag == -1){
+            animationTime += delta;
+        }
         //MODE 0 is the dragon idling on the left side of the screen
-        else if (modeFlag == 0){
+        if (modeFlag == 0){
                 //Resets the frame to have the whale have it's mouth closed
                 if(mouthAnimation.getKeyFrame(animationTime) != headTexture[0][0]) {animationTime += delta;}
                 //If it is closed start up the eye closing animation
@@ -178,16 +205,57 @@ class Dragon {
         else if(modeFlag == 1){
                 prepTimer -= delta;
                 //Open the mouth
-                if(mouthAnimation.getKeyFrame(animationTime) != headTexture[1][0]) {animationTime += delta;}
+                if(!modeLockedInFlag){
+                    if(phaseFlag == 0){
+                        futureModeFlag = 4;
+                    }
+                    else if (phaseFlag == 1){
+                        if(attackCounterFlag == 3){
+                            futureModeFlag = 4;
+                            attackCounterFlag = 0;
+                        }
+                        else {
+                            futureModeFlag = 2;
+                            attackCounterFlag++;
+                        }
+                    }
+                    else if(phaseFlag == 2){
+                        if(attackCounterFlag == 3) {
+                            futureModeFlag = 4;
+                            attackCounterFlag = 0;
+                        }
+                        else if(attackCounterFlag == 0){
+                            futureModeFlag = 3;
+                            attackCounterFlag++;
+                        }
+                        else
+                        {
+                            futureModeFlag = MathUtils.random(2,3);
+                            MOVE_TIME = MathUtils.random(1,4);
+                            attackCounterFlag++;
+                        }
+                    }
+                    modeLockedInFlag = true;
+                }
+                if(futureModeFlag == 3 && laserAnimation.getKeyFrame(laserAnimationTime) != headTexture[2][2]) {
+                    laserAnimationTime += delta;
+                }
+                else if(mouthAnimation.getKeyFrame(animationTime) != headTexture[1][0]) {
+                    animationTime += delta;}
                 if (prepTimer <= 0) {
                     prepTimer = PREP_TIME;
-                    int mode = MathUtils.random(2,4); //Choose the attack type
-                    setUpMinAndMax();                  //Sets up bounds
-                    eyeLaser.height = 22;
-                    eyeLaser.x = horn.x + horn.width/2;
-                    eyeLaser.y = horn.y + horn.height - 22;
-                    eyeLaserFlag = true;
-                    modeFlag = mode;
+                    if(futureModeFlag == 3){
+                        eyeLaser.height = LASER_HEIGHT;
+                        eyeLaser.x = horn.x + horn.width/2;
+                        eyeLaser.y = horn.y + horn.height - LASER_HEIGHT;
+                        eyeLaserFlag = true;
+                        laserAnimationTime = 0;
+                        animationTime = 0;
+                    }
+                    else{setUpMinAndMax();}          //Sets up bounds
+                    modeFlag = futureModeFlag;
+                    futureModeFlag = -1;
+                    modeLockedInFlag = false;
                 }
              }
         //MODE 2 is the dragon shooting has two timers one for end of MODE and one for
@@ -519,12 +587,14 @@ class Dragon {
     void restart(){
         scales.clear();
         bullets.clear();
-        modeFlag = -1;
+        modeFlag = -2;
         eyeLaser.width = 0;
         head.x = -HEAD_WIDTH;
-        head.y = HEAD_HEIGHT;
+        head.y = 240;
         horn.x = -HEAD_WIDTH;
-        horn.y = HEAD_HEIGHT/2 + HORN_HEIGHT;
+        horn.y = 240;
+        animationTime = 0;
+        laserAnimationTime = 0;
     }
 
     /*
@@ -547,7 +617,10 @@ class Dragon {
 
     void draw(SpriteBatch batch) {
         TextureRegion headTexture;
-        if(animationFlag) {
+        if(animationFlag && futureModeFlag == 3) {
+            headTexture = (TextureRegion) laserAnimation.getKeyFrame(laserAnimationTime);
+        }
+        else if(animationFlag || modeFlag == -1){
             headTexture = (TextureRegion) mouthAnimation.getKeyFrame(animationTime);
         }
         else{
