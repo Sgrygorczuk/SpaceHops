@@ -1,3 +1,9 @@
+/*
+Initially the Collectible class was used for only collectible but because of its generic
+functionality it became generic round object class. For now it's too much work to remake it and update
+all classes. Will need to overhaul later
+ */
+
 package com.packt.spacehops;
 
 import com.badlogic.gdx.graphics.Texture;
@@ -11,130 +17,199 @@ import com.badlogic.gdx.math.MathUtils;
 
 public class Collectible {
 
-        private static final float COLLECTIBLE_CIRCLE_RADIUS = 20f;
-        private static final float ASTEROID_RADIUS = 32f;
-        private static final float Y_OFFSET = 200;
+    //Generic Collectible size, and  off set
+    private static final float COLLECTIBLE_CIRCLE_RADIUS = 20f;
+    private static final float ASTEROID_RADIUS = 32f;
+    private float y = 350;
+    private static final float Y_OFFSET = 200;
 
-        private boolean collectedFlag = false;
+    //Flags
+    private boolean collectedFlag = false;  //Sets to be collected so that it no longer collied after first touch
 
-        private final Circle collectibleCircle;
+    //Circle object
+    private final Circle collectibleCircle;
+
+    //Speed
+    private static final float MAX_SPEED_PER_SECOND = 100f;
+
+    //Texture and Animation
+    private static final int TILE_WIDTH = 40;			//The width of each tile in the texture
+    private static final int TILE_HEIGHT = 40;			//The height of each tile in the texture
+    private static final float FRAME_DURATION = 0.25f;	//How long each tile lasts on screen
+    private float animationTime = 0;
+    private final Animation animation;
+
+    /*
+    Input: Texture of the object
+    Output: Void
+    Purpose: Constructor that breaks down the texture nto frame and create the circle object
+    */
+    Collectible(Texture collectibleTexture){
+        TextureRegion[][] collectibleTextures = new TextureRegion(collectibleTexture).split(TILE_WIDTH, TILE_HEIGHT); //Breaks down the texture into tiles
+
+        //Sets the animation to be the texture 0-3 and sets it to loop
+        this.animation = new Animation<>(FRAME_DURATION, collectibleTextures[0][0], collectibleTextures[0][1], collectibleTextures[0][2], collectibleTextures[0][1]);
+        this.animation.setPlayMode(Animation.PlayMode.LOOP);
 
         //Position
-        private float x = 0;
-        private float y = 350;
-        private static final float MAX_SPEED_PER_SECOND = 100f;
+        this.collectibleCircle = new Circle(0,y,COLLECTIBLE_CIRCLE_RADIUS);
+    }
 
-        //Texture and Animation
-        private static final int TILE_WIDTH = 40;			//The width of each tile in the texture
-        private static final int TILE_HEIGHT = 40;			//The height of each tile in the texture
-        private static final float FRAME_DURATION = 0.25f;	//How long each tile lasts on screen
-        private float animationTime = 0;
-        private final Animation animation;
+    /*
+    Input: X, sets the x position but allows the object to get random y. For LEVEL 1
+    Output: Void
+    Purpose: Creates a object at a specific x with random y
+    */
+    void setPosition(float x){
+        collectibleCircle.setX(x);
+        float y = MathUtils.random(Y_OFFSET);
+        collectibleCircle.setY(this.y - y);
+    }
 
-        Collectible(Texture collectibleTexture){
+    /*
+    Input: X, sets the x, y and height of the offset. Used for the Scales in LEVEL 2 for Dragon
+    Output: Void
+    Purpose: Creates a object at a specific x with bound of y and height for y
+    */
+    void setPosition(float x ,float y, float height){
+        collectibleCircle.setX(x);
+        float offset = MathUtils.random(height);
+        collectibleCircle.setY(y - offset);
+    }
 
-            TextureRegion[][] collectibleTextures = new TextureRegion(collectibleTexture).split(TILE_WIDTH, TILE_HEIGHT); //Breaks down the texture into tiles
+    /*
+    Input: X, sets the x, y and height of the offset. Used for the Fire for Dragon LEVEL 2
+    Output: Void
+    Purpose: Creates an object at specify x and y no offset
+    */
+    void setPortionNoOffset(float x ,float y){
+        collectibleCircle.setX(x);
+        collectibleCircle.setY(y);
+    }
 
-            //Sets the animation to be the texture 0-3 and sets it to loop
-            this.animation = new Animation<>(FRAME_DURATION, collectibleTextures[0][0], collectibleTextures[0][1], collectibleTextures[0][2], collectibleTextures[0][1]);
-            this.animation.setPlayMode(Animation.PlayMode.LOOP);
 
-            this.collectibleCircle = new Circle(x,y,COLLECTIBLE_CIRCLE_RADIUS);
-        }
+    /*
+    Input: Void
+    Output: X
+    Purpose: Returns x
+    */
+    float getX(){return collectibleCircle.x;}
 
-        void setPosition(float x){
-            collectibleCircle.setX(x);
-            float y = MathUtils.random(Y_OFFSET);
-            collectibleCircle.setY(this.y - y);
-        }
+    /*
+    Input: Void
+    Output: Y
+    Purpose: Returns Y
+    */
+    float getY(){return collectibleCircle.y;}
 
-        void setPosition(float x ,float y, float height){
-            collectibleCircle.setX(x);
-            float offset = MathUtils.random(height);
-            collectibleCircle.setY(y - offset);
-        }
+    /*
+    Input: Void
+    Output: Radius
+    Purpose: Returns Radius
+    */
+    float getRadius(){return COLLECTIBLE_CIRCLE_RADIUS;}
 
-        void setPortionNoOffset(float x ,float y){
-            collectibleCircle.setX(x);
-            collectibleCircle.setY(y);
-        }
+    /*
+    Input: Void
+    Output: Asteroid Radius
+    Purpose: Returns Asteroid Radius, used for spacing in LEVEL 1
+    */
+    float getAsteroidRadius(){return ASTEROID_RADIUS;}
 
-        float getX(){return collectibleCircle.x;}
+    /*
+    Input: Void
+    Output: Boolean
+    Purpose: Returns the colliding Flag
+    */
+    boolean getCollidingFlag(){return collectedFlag;}
 
-        float getY(){return collectibleCircle.y;}
-
-        float getRadius(){return COLLECTIBLE_CIRCLE_RADIUS;}
-
-        float getAsteroidRadius(){return ASTEROID_RADIUS;}
+    /*
+    Input: Void
+    Output: Circle
+    Purpose: Returns circle for collision checks
+    */
+    Circle getCollisionCircle(){return collectibleCircle;}
 
     /*
     Input: Void
     Output: Void
-    Purpose: Checks if flappy has intersected with any of the rectangles or circles
+    Purpose: Checks if the object has collided
     */
     boolean isColliding(SpaceCraft spaceCraft) {
         Circle spaceCraftCollisionCircle = spaceCraft.getCollisionCircle();
         return Intersector.overlaps(spaceCraftCollisionCircle, collectibleCircle);
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Says the object has been collided with and can't do it anymore
+    */
     void setCollidingFlag(){ collectedFlag = true;}
 
-    void setRadius(){
-        float radius = MathUtils.random(ASTEROID_RADIUS/4, ASTEROID_RADIUS/2);
-        collectibleCircle.radius = radius;
-    }
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Sets a random radius to be within a range of ASTEROID_RADIUS/4, ASTEROID_RADIUS/2
+    */
+    void setRadius(){ collectibleCircle.radius = MathUtils.random(ASTEROID_RADIUS/4, ASTEROID_RADIUS/2);}
 
+    /*
+    Input: Radius
+    Output: Void
+    Purpose: Sets a passed in radius as radius
+    */
     void setRadius(float radius){
         collectibleCircle.radius = radius;
     }
 
-    boolean getCollidingFlag(){return collectedFlag;}
+    /*
+    Input: Void
+    Output: Void
+    Purpose: General update function for collectible
+    */
+    void update(float delta, SpaceCraft spaceCraft){
+        updateAnimation(delta);                     //Update animation frame
+        isColliding(spaceCraft);                    //Check if it hit anything
+        updatePosition(collectibleCircle.x-(MAX_SPEED_PER_SECOND * delta)); //Move the object
+    }
 
+    /*
+    Input: Delta
+    Output: Void
+    Purpose: Updates to new animation frame
+    */
+    void updateAnimation(float delta){animationTime += delta;}
 
-        /*
-        Input: Void
-        Output: Void
-        Purpose: Method that the object calls when being updated by the render
-        */
-        void update(float delta, SpaceCraft spaceCraft){
-            updateAnimation(delta);
-            isColliding(spaceCraft);
-            updatePosition(collectibleCircle.x-(MAX_SPEED_PER_SECOND * delta));
-        }
-
-        void updateAnimation(float delta){animationTime += delta;}
-
-        Circle getCollisionCircle(){return collectibleCircle;}
-
-        /*
-        Input: Void
-        Output: Void
-        Purpose: Gives the Screen X coordinate
-        */
-        private void updatePosition(float x){ collectibleCircle.x = x;}
-
-        void updatePosition(){collectibleCircle.x -= 3;}
-
+    /*
+    Input: X
+    Output: Void
+    Purpose: Updates position to that's passed in
+    */
+    private void updatePosition(float x){ collectibleCircle.x = x;}
 
     /*
     Input: Void
     Output: Void
-    Purpose: Checks if the object is behind flappee
+    Purpose: Move the x by -3
     */
-        // boolean isPointClaimed(){return pointClaimed;}
+    void updatePosition(){collectibleCircle.x -= 3;}
 
     /*
-    Input: Void
+    Input: SpriteBatch
     Output: Void
-    Purpose: Sets flag that this object went past flappee
+    Purpose: Draws the object if hasn't collided
     */
-        //void markPointClaimed(){ pointClaimed = true;}
-
-        void draw(SpriteBatch batch){
-            if(!collectedFlag) {
-                TextureRegion collectibleTexture = (TextureRegion) animation.getKeyFrame(animationTime);
-                batch.draw(collectibleTexture, collectibleCircle.x  - collectibleCircle.radius, collectibleCircle.y - collectibleCircle.radius,
-                        2*collectibleCircle.radius, 2*collectibleCircle.radius);}
+    void draw(SpriteBatch batch){
+        if(!collectedFlag) {
+            TextureRegion collectibleTexture = (TextureRegion) animation.getKeyFrame(animationTime);
+            batch.draw(collectibleTexture, collectibleCircle.x  - collectibleCircle.radius, collectibleCircle.y - collectibleCircle.radius,
+                    2*collectibleCircle.radius, 2*collectibleCircle.radius);}
         }
 
-        void drawDebug(ShapeRenderer shapeRenderer){ if(!collectedFlag) { shapeRenderer.circle(collectibleCircle.x, collectibleCircle.y, collectibleCircle.radius); }}}
+    /*
+    Input: ShapeRenderer
+    Output: Void
+    Purpose: Draws the wire frame
+    */
+    void drawDebug(ShapeRenderer shapeRenderer){ if(!collectedFlag) { shapeRenderer.circle(collectibleCircle.x, collectibleCircle.y, collectibleCircle.radius); }}}

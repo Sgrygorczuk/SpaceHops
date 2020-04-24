@@ -671,10 +671,10 @@ class AdventureLevelOne extends ScreenAdapter {
     }
 
     /*
-Input: Void
-Output: Void
-Purpose: Destroys everything once we move onto the new screen
-*/
+    Input: Void
+    Output: Void
+    Purpose: Destroys everything once we move onto the new screen
+    */
     @Override
     public void dispose() {
         pauseMenu.dispose();

@@ -99,9 +99,9 @@ class Dragon {
     //-2 Nothing, -1 Enter
     //0 Moving up and down, 1 prepare for attacking, 12 attacking, 3 coming back
     private int modeFlag = -2;
-    private int futureModeFlag = 2;
-    private int phaseFlag = 0;
-    private int attackCounterFlag = 0;
+    private int futureModeFlag = 2;     //Tells us which flag we move after mode 1
+    private int phaseFlag = 0;          //Tells us which phase the level is in this tells what behavior the dragon should have
+    private int attackCounterFlag = 0;  //Tells us how many attacks have been done before dragon bites
 
     /*
     Input: Textures for head, bullet and scales
@@ -120,6 +120,7 @@ class Dragon {
         this.laserTexture = laserTexture;
         this.headTexture = new TextureRegion(headTexture).split(HEAD_TILE_WIDTH, HEAD_TILE_HEIGHT); //Breaks down the texture into tiles
 
+        //Set up animation loops
         eyeAnimation = new Animation<>(EYE_FRAME_DURATION, this.headTexture[0][0], this.headTexture[1][1],
                 this.headTexture[1][2], this.headTexture[1][3]);
         eyeAnimation.setPlayMode(Animation.PlayMode.LOOP_PINGPONG);
@@ -161,8 +162,18 @@ class Dragon {
     */
     float getWidth(){return HEAD_WIDTH;}
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Set mode to -1 starting the dragon to move in
+    */
     void setStart(){modeFlag = -1;}
 
+    /*
+    Input: Int Phase
+    Output: Void
+    Purpose: Used by lvl to indicate phase change
+    */
     void setPhase(int phase){
         phaseFlag = phase;
         if(phase == 0){ MOVE_TIME = 5F; }
@@ -170,6 +181,51 @@ class Dragon {
         else{ MOVE_TIME = 1.5F; }
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Based on the Phase different sets future mode is set up
+    */
+    void updateFutureMode(){
+        //If Phase 0 then just bite
+        if(phaseFlag == 0){
+            futureModeFlag = 4;
+        }
+        //If Phase 1 blow fire 3 time then bite
+        else if (phaseFlag == 1){
+            //Bite
+            if(attackCounterFlag == 3){
+                futureModeFlag = 4;
+                attackCounterFlag = 0;
+            }
+            //Blow fire
+            else {
+                futureModeFlag = 2;
+                attackCounterFlag++;
+            }
+        }
+        //If Phase 2 shoot laser, fire and bite
+        else if(phaseFlag == 2){
+            //Bite
+            if(attackCounterFlag == 3) {
+                futureModeFlag = 4;
+                attackCounterFlag = 0;
+            }
+            //Shoot laser as first attack
+            else if(attackCounterFlag == 0){
+                futureModeFlag = 3;
+                attackCounterFlag++;
+            }
+            //Random chance of fire or laser with random time between them
+            else {
+                futureModeFlag = MathUtils.random(2,3);
+                MOVE_TIME = MathUtils.random(2,5);
+                attackCounterFlag++;
+            }
+        }
+        //If occurred stop from doing until we restart attack
+        modeLockedInFlag = true;
+    }
 
     /*
     Input: Delta, timing
@@ -177,114 +233,113 @@ class Dragon {
     Purpose: Counts down when to switch between modes
     */
     private void updateMode(float delta) {
+        if(modeFlag == -1){modeNegativeOne(delta);}
+        else if(modeFlag == 0){modeZero(delta);}
+        else if(modeFlag == 1){modeOne(delta);}
+        else if(modeFlag == 2){modeTwo(delta);}
+        else if(modeFlag == 3) { if(!eyeLaserFlag && eyeLaser.width == 0){ modeFlag = 0; }}
+        //MODE 4 moves the dragon in for a bite
+        else if(modeFlag == 4 && head.x >= ATTACK_X-head.x){ modeFlag = 5;}
+        //Returns the dragon back to idle position once back on left side of the screen
+        else if(modeFlag == 5 && head.x <= 30){modeFlag = 0;}
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Mode Neg One moves the dragon onto the screen from off screen
+    */
+    private void modeNegativeOne(float delta){
         //MODE -1 is dragon entering the screen
         if(modeFlag == -1 && head.x > HEAD_WIDTH - 10){
             modeFlag = 0;
             animationTime = 0;
         }
+        //If entering screen bite
         else if(modeFlag == -1){
             animationTime += delta;
         }
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Mode Zero is the dragon idling on the left side of the screen
+    */
+    private void modeZero(float delta){
         //MODE 0 is the dragon idling on the left side of the screen
-        if (modeFlag == 0){
-                //Resets the frame to have the whale have it's mouth closed
-                if(mouthAnimation.getKeyFrame(animationTime) != headTexture[0][0]) {animationTime += delta;}
-                //If it is closed start up the eye closing animation
-                else { animationFlag = false; }
-                //If eye closing is set to happen cycle through the frames
-                if(!animationFlag){animationTime += delta;}
-                moveTimer -= delta;
-                if (moveTimer <= 0) {
-                    moveTimer = MOVE_TIME;
-                    animationFlag = true;
-                    modeFlag = 1;
-                }
-            }
+        //Resets the frame to have the whale have it's mouth closed
+        if(mouthAnimation.getKeyFrame(animationTime) != headTexture[0][0]) {animationTime += delta;}
+        //If it is closed start up the eye closing animation
+        else { animationFlag = false; }
+        //If eye closing is set to happen cycle through the frames
+        if(!animationFlag){animationTime += delta;}
+        moveTimer -= delta;
+        if (moveTimer <= 0) {
+            moveTimer = MOVE_TIME;
+            animationFlag = true;
+            modeFlag = 1;
+        }
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Mode One is the dragon pausing and showing player what kind of attack it will do
+    */
+    private void modeOne(float delta){
         //MODE 1 is the mode where dragon stops indicating to player that the
         //Dragons is about to attack, has random chance of shooting fire or biting
-        else if(modeFlag == 1){
-                prepTimer -= delta;
-                //Open the mouth
-                if(!modeLockedInFlag){
-                    if(phaseFlag == 0){
-                        futureModeFlag = 4;
-                    }
-                    else if (phaseFlag == 1){
-                        if(attackCounterFlag == 3){
-                            futureModeFlag = 4;
-                            attackCounterFlag = 0;
-                        }
-                        else {
-                            futureModeFlag = 2;
-                            attackCounterFlag++;
-                        }
-                    }
-                    else if(phaseFlag == 2){
-                        if(attackCounterFlag == 3) {
-                            futureModeFlag = 4;
-                            attackCounterFlag = 0;
-                        }
-                        else if(attackCounterFlag == 0){
-                            futureModeFlag = 3;
-                            attackCounterFlag++;
-                        }
-                        else
-                        {
-                            futureModeFlag = MathUtils.random(2,3);
-                            MOVE_TIME = MathUtils.random(1,4);
-                            attackCounterFlag++;
-                        }
-                    }
-                    modeLockedInFlag = true;
-                }
-                if(futureModeFlag == 3 && laserAnimation.getKeyFrame(laserAnimationTime) != headTexture[2][2]) {
-                    laserAnimationTime += delta;
-                }
-                else if(mouthAnimation.getKeyFrame(animationTime) != headTexture[1][0]) {
-                    animationTime += delta;}
-                if (prepTimer <= 0) {
-                    prepTimer = PREP_TIME;
-                    if(futureModeFlag == 3){
-                        eyeLaser.height = LASER_HEIGHT;
-                        eyeLaser.x = horn.x + horn.width/2;
-                        eyeLaser.y = horn.y + horn.height - LASER_HEIGHT;
-                        eyeLaserFlag = true;
-                        laserAnimationTime = 0;
-                        animationTime = 0;
-                    }
-                    else{setUpMinAndMax();}          //Sets up bounds
-                    modeFlag = futureModeFlag;
-                    futureModeFlag = -1;
-                    modeLockedInFlag = false;
-                }
-             }
+        prepTimer -= delta;
+        //Picks the next type of attack
+        if(!modeLockedInFlag){updateFutureMode();}
+
+        //Lights up the eye to indicate laser attack
+        if(futureModeFlag == 3 && laserAnimation.getKeyFrame(laserAnimationTime) != headTexture[2][2]) { laserAnimationTime += delta;}
+        //Opens mouth to indicate mouth attack
+        else if(mouthAnimation.getKeyFrame(animationTime) != headTexture[1][0]) { animationTime += delta;}
+        //If prep time is over moves onto next mode
+        if (prepTimer <= 0) {
+            prepTimer = PREP_TIME;
+            if(futureModeFlag == 3){
+                //If shooting laser, reposition the laser and starts the animation
+                eyeLaser.height = LASER_HEIGHT;
+                eyeLaser.x = horn.x + horn.width/2;
+                eyeLaser.y = horn.y + horn.height - LASER_HEIGHT;
+                eyeLaserFlag = true;
+                laserAnimationTime = 0;
+                animationTime = 0;
+            }
+            //Else sets ip bonds and moves
+            else{setUpMinAndMax();}          //Sets up bounds
+
+            //Restarts the system
+            modeFlag = futureModeFlag;
+            futureModeFlag = -1;
+            modeLockedInFlag = false;
+        }
+    }
+
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Mode Two is the shooting of fire, is on time to spwan fwe shots in a row
+    */
+    private void modeTwo(float delta){
         //MODE 2 is the dragon shooting has two timers one for end of MODE and one for
         //a pause between shots. After this it returns to idling.
-        else if(modeFlag == 2){
-            //Counts down between shots
-            shootTimer -= delta;
-            if (shootTimer <= 0) {
-                shootTimer = SHOOT_TIME;
-                createBullets();
-            }
-            //Counts down till it stops shooting
-            shootTimerEnd -= delta;
-            if (shootTimerEnd <= 0) {
-                shootTimerEnd = SHOOT_TIME_END;
-                modeFlag = 0;
-            }
+        //Counts down between shots
+        shootTimer -= delta;
+        if (shootTimer <= 0) {
+            shootTimer = SHOOT_TIME;
+            createBullets();
         }
-        else if(modeFlag == 3) {
-            if(!eyeLaserFlag && eyeLaser.width == 0){
-                modeFlag = 0;
-            }
+        //Counts down till it stops shooting
+        shootTimerEnd -= delta;
+        if (shootTimerEnd <= 0) {
+            shootTimerEnd = SHOOT_TIME_END;
+            modeFlag = 0;
         }
-        //MODE 3 moves the dragon in for a bite
-        else if(modeFlag == 4 && head.x >= ATTACK_X-head.x){
-            modeFlag = 5;
-        }
-        //Returns the dragon back to idle position once back on left side of the screen
-        else if(modeFlag == 5 && head.x <= 30){modeFlag = 0;}
     }
 
     /*
@@ -534,26 +589,42 @@ class Dragon {
                 bullets.add(bullet);
             }
     }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Remove bullets that went off screen in batches so that it doesn't change their movement behavior
+    */
     private void removeBullets(){
         int counter = 0;
+        //Makes sure all of the bullets are off screen
         if(bullets.size > 0) {
             for (Collectible bullet : bullets){
                 if(bullet.getX()-bullet.getRadius() > 320){counter++;}
             }
         }
+        //Removes all of the bullets
         if(counter == bullets.size){bullets.clear();}
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Updates the position of bullets,
+        Based on position in array and y of bullet they move differently
+    */
     private void updatePositionBullets(){
         if(bullets.size > 0) {
             for (int i = 0; i < bullets.size; i++) {
-                System.out.println(bullets.get(i).getY() + "," + yMax + head.height) ;
+                //If the bullet is 1 out of 3  in array it will rise in the y direction while moving in x
                 if(i % 3 == 1 && bullets.get(i).getY() < yMax + head.height){
                     bullets.get(i).setPortionNoOffset(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY() + Y_SPEED/10);
                 }
+                //If the bullet is 3 out of 3 in array it will fall in the y direction while moving in x
                 else if(i % 3 == 0 && bullets.get(i).getY() > yMin){
                     bullets.get(i).setPortionNoOffset(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY() - Y_SPEED/10);
                 }
+                //If the bullet is any other place in array or reached it's y max it just moves forward in x
                 else{
                     bullets.get(i).setPortionNoOffset(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY());
                 }
@@ -561,19 +632,13 @@ class Dragon {
         }
     }
 
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Updates the position of the laser
+    */
     private void updateEyeLaserPosition(float delta){
-        if(eyeLaserFlag){ eyeLaser.width += 5;}
-        else {
-            if (eyeLaser.height > 0) {
-                eyeLaser.height -= 2;
-                eyeLaser.y += 1;
-                eyeLaser.width -= 5;
-            }
-            else {
-                eyeLaser.height = 0;
-                eyeLaser.width = 0;
-            }
-        }
+        //If  laser hits the end of the screen it waits a period of time before turing off
         if(eyeLaser.width + eyeLaser.x >= 320){
             laserTimer -= delta;
             if (laserTimer <= 0) {
@@ -581,9 +646,29 @@ class Dragon {
                 eyeLaserFlag = !eyeLaserFlag;
             }
         }
+
+        //If eyeLaserFlag is on we extend the laser
+        if(eyeLaserFlag){ eyeLaser.width += 5;}
+        //Else we shrink it by making both height and width smaller
+        else {
+            if (eyeLaser.height > 0) {
+                eyeLaser.height -= 2;
+                eyeLaser.y += 1;
+                eyeLaser.width -= 5;
+            }
+            //If the size is less then 0 we stop shirking and just set it to 0
+            else {
+                eyeLaser.height = 0;
+                eyeLaser.width = 0;
+            }
+        }
     }
 
-
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Restarts the variable to their original states
+    */
     void restart(){
         scales.clear();
         bullets.clear();
@@ -600,34 +685,48 @@ class Dragon {
     /*
     Input: Void
     Output: Void
-    Purpose: Checks if spacecraft is colliding with either of the boarders
+    Purpose: Checks if spacecraft is colliding with any of the enemy parts
     */
     boolean isColliding(SpaceCraft spaceCraft) {
         Circle spaceCraftCollisionCircle = spaceCraft.getCollisionCircle();
+        //Checks if it hit any bullets
         for(Collectible bullet : bullets){
-            if(Intersector.overlaps(spaceCraftCollisionCircle, bullet.getCollisionCircle()))
-            {
-                return true;
-            }
+            if(Intersector.overlaps(spaceCraftCollisionCircle, bullet.getCollisionCircle())) { return true; }
         }
+        //Checks if it hit any of the scales
+        for(Collectible scale : scales){
+            if(Intersector.overlaps(spaceCraftCollisionCircle, scale.getCollisionCircle())) { return true; }
+        }
+        //Checks if it hit the head, horn or laser,
         return Intersector.overlaps(spaceCraftCollisionCircle, head) ||
                 Intersector.overlaps(spaceCraftCollisionCircle, horn) ||
                 Intersector.overlaps(spaceCraftCollisionCircle, eyeLaser);
     }
 
+    /*
+    Input: SpriteBatch
+    Output: Void
+    Purpose: Draws the textures
+    */
     void draw(SpriteBatch batch) {
         TextureRegion headTexture;
+        //Animates the eye heating up to shoot
         if(animationFlag && futureModeFlag == 3) {
             headTexture = (TextureRegion) laserAnimation.getKeyFrame(laserAnimationTime);
         }
+        //Animates the mouth opening and closing
         else if(animationFlag || modeFlag == -1){
             headTexture = (TextureRegion) mouthAnimation.getKeyFrame(animationTime);
         }
+        //Animates the eye opening and closing
         else{
             headTexture = (TextureRegion) eyeAnimation.getKeyFrame(animationTime);
         }
+        //Draws the head
         batch.draw(headTexture, head.x - 30, head.y - 8);
+        //Draws the laser shooting
         batch.draw(laserTexture, eyeLaser.x, eyeLaser.y, eyeLaser.width, eyeLaser.height);
+        //Draws scales and bullets
         for (Collectible scale : scales){scale.draw(batch);}
         for (Collectible bullet : bullets){bullet.draw(batch);}
     }

@@ -17,7 +17,6 @@ package com.packt.spacehops;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
@@ -26,7 +25,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
@@ -52,10 +50,10 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Image processing -- Objects that modify the view and textures
      */
-    private ShapeRenderer shapeRendererEnemy; //Creates the wire frames
-    private ShapeRenderer shapeRendererUser;
-    private ShapeRenderer shapeRendererBackground;
-    private ShapeRenderer shapeRendererCollectible;
+    private ShapeRenderer shapeRendererEnemy;           //Creates wire frame for enemy objects
+    private ShapeRenderer shapeRendererUser;            //Creates wire frame for player object
+    private ShapeRenderer shapeRendererBackground;      //Creates wire frame for background objects
+    private ShapeRenderer shapeRendererCollectible;     //Creates wire frame for collectible objects
 
     private Viewport viewport;			 //The screen where we display things
     private Camera camera;				 //The camera viewing the viewport
@@ -64,34 +62,34 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Textures
      */
-    private Texture spaceCraftTexture;
-    private Texture collectibleTexture;
-    private Texture scaleTexture;
-    private Texture fireTexture;
-    private Texture laserTexture;
-    private Texture borderTexture;
-    private Texture dragonHeadTexture;
-    private Texture progressBarTexture;
-    private Texture progressBarFrameTexture;
-    private Texture backgroundTexture;
-    private Texture portalLineTexture;
-    private Texture profileTexture;
-    private Texture communicationFrameTexture;
-    private Texture sputnikTexture;
+    private Texture spaceCraftTexture;          //Player Texture
+    private Texture collectibleTexture;         //Collectible Texture
+    private Texture scaleTexture;               //Trail behind the "Dragon"
+    private Texture fireTexture;                //Texture of the "Fire" attack
+    private Texture laserTexture;               //Texture of the laser
+    private Texture borderTexture;              //Texture of the bounds on top and bottom of screen
+    private Texture dragonHeadTexture;          //Texture of the enemy
+    private Texture progressBarTexture;         //Texture of the progress bar
+    private Texture progressBarFrameTexture;    //Texture of the Frame of the Progress bar
+    private Texture backgroundTexture;          //Background
+    private Texture portalLineTexture;          //Texture of the lines flying in the backgrounf
+    private Texture profileTexture;             //Profile of the talking character
+    private Texture communicationFrameTexture;  //Frame
+    private Texture sputnikTexture;             //Sputnik NPC Texture
 
     /*
     User spaceship object
      */
-    private SpaceCraft spaceCraft;
-    private Dragon dragon;
+    private SpaceCraft spaceCraft;          //Player object
+    private Dragon dragon;                  //Enemy object
     private ConversationBox conversationBox;//Conversation box that is used to talk to the user
 
     /*
     Array of the asteroids and collectibles that the user will encounter
      */
-    private Array<SpaceBorder> spaceBorders = new Array<>();         //Array of asteroids
+    private Array<SpaceBorder> spaceBorders = new Array<>();     //Array of asteroids
     private Array<Collectible> collectibles = new Array<>();    //Array of collectibles
-    private Array<Rectangle> portalLines = new Array<>();
+    private Array<Rectangle> portalLines = new Array<>();       //Keeps track of the background lines
 
     //Background objects we use
     private PauseMenu pauseMenu;
@@ -110,13 +108,15 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Flags
      */
-    private static final int GOAL = 10;           //Goal of the level to end
+    private static final int GOAL = 10;          //Goal of the level to end
     private boolean debugFlag = false;          //Tells screen to draw debug wireframe
     private boolean textureFlag = true;         //Tells screen to draw textures
     private boolean stopSpawningFlag = false;   //Tells screen to stop creating more asteroids and collectibles
     private boolean endLevelFlag = false;       //Tells screen that the level is complete and to give the next stage menu
     private boolean screenOnFlag = true;        //Tells screen that the conversation box is on
-    private boolean sputnikAliveFlag = true;
+    private boolean sputnikAliveFlag = true;    //Tells screen to show the sputnik texture
+    private boolean sputnikMovementFlag = false; //Tells sputnik to move up and down, true = up, false = down
+    private float sputnikY = 240;               //Base y position of the Sputnik
 
     //
     private final Game game;
@@ -163,14 +163,18 @@ class AdventureLevelTwo extends ScreenAdapter {
         spaceCraft = new SpaceCraft(spaceCraftTexture);
         spaceCraft.updatePosition(2*WORLD_WIDTH/3, WORLD_HEIGHT/2);
 
-        conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
-
+        //Enemy set up
         dragon = new Dragon(dragonHeadTexture, scaleTexture, fireTexture, laserTexture);
-        pauseMenu = new PauseMenu(game);
 
         //Player UI
+            //Progress of stage
         progressBar = new ProgressBar(WORLD_WIDTH,WORLD_HEIGHT,progressBarFrameTexture,progressBarTexture);
         progressBar.setGoal(GOAL);
+            //Talk from NPC
+        conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
+            //Menus
+        pauseMenu = new PauseMenu(game);
+
     }
 
     /*
@@ -195,19 +199,21 @@ class AdventureLevelTwo extends ScreenAdapter {
         //Spaceship
         spaceCraftTexture = new Texture(Gdx.files.internal("SpaceshipPack.png"));
 
-        borderTexture = new Texture(Gdx.files.internal("CloudBoarder.png"));
 
         //Collectible
         collectibleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
 
+        //Enemy
         dragonHeadTexture = new Texture(Gdx.files.internal("DragonPack.png"));
         laserTexture = new Texture(Gdx.files.internal("Laser.png"));
         fireTexture = new Texture(Gdx.files.internal("CloudPack.png"));
         scaleTexture = new Texture(Gdx.files.internal("TearPack.png"));
+        borderTexture = new Texture(Gdx.files.internal("CloudBoarder.png"));
 
         //Background
         backgroundTexture = new Texture(Gdx.files.internal("PortalBackground.png"));
         portalLineTexture = new Texture(Gdx.files.internal("PortalLines.png"));
+        sputnikTexture = new Texture(Gdx.files.internal("Spudnik.png"));
 
         //Communication Frame
         communicationFrameTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
@@ -217,7 +223,6 @@ class AdventureLevelTwo extends ScreenAdapter {
         progressBarTexture = new Texture(Gdx.files.internal("Progress.png"));
         progressBarFrameTexture = new Texture(Gdx.files.internal("ProgressBar.png"));
 
-        sputnikTexture = new Texture(Gdx.files.internal("Spudnik.png"));
     }
 
     /*
@@ -300,7 +305,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         shapeRendererBackground.setProjectionMatrix(camera.projection);                 //Screen set up camera
         shapeRendererBackground.setTransformMatrix(camera.view);                        //Screen set up camera
         shapeRendererBackground.begin(ShapeRenderer.ShapeType.Line);                    //Starts to draw
-        drawDebugPortalLine(shapeRendererBackground);
+        if(portalLines.size > 0) {drawDebugPortalLine(shapeRendererBackground);}
         shapeRendererBackground.end();
     }
 
@@ -339,42 +344,69 @@ class AdventureLevelTwo extends ScreenAdapter {
     */
     private void update(float delta){
         //If we are leaving the screen we get rid of everything in memory
-        if(pauseMenu.getDisposeFlag()){dispose();}
-        updateSputnik();
-        updateCommunicationScreenTime(delta);
-        updatePart(delta);
-        updatePortalLines();
-        updateCheckForDeath();
-        updateDragon(delta);
-        updateCollectibles();
-        updateSpaceBoarders();
+        if(pauseMenu.getDisposeFlag()){dispose();}      //If flag is true delete all the Stage and Texture objects
+        updateSputnik();                                //Checks if sputnik should be displayed
+        if(screenOnFlag) {updateCommunicationScreenTime(delta);}   //Counts down till screen goes down
+        updatePart(delta);                              //Updates the phase of the level changing the enemy pattern
+        updatePortalLines();                            //Updates the background line position
+        updateCheckForDeath();                          //Check for death collision
+        updateDragon(delta);                            //Updates the action and position of enemy
+        updateCollectibles();                           //Update the position of collectibles
+        updateSpaceBoarders();                          //Updates player with progress through the stage
         updateSpaceship();                       //Updates the position of the spaceship
     }
 
-    private void updateSputnik(){ if(dragon.getX() + dragon.getWidth() >= WORLD_WIDTH/4 + sputnikTexture.getWidth()){sputnikAliveFlag = false;} }
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Updates the position and turns off texture if "killed"
+    */
+    private void updateSputnik(){
+        updateSputnikPosition();
+        if(dragon.getX() + dragon.getWidth() >= WORLD_WIDTH/4 + sputnikTexture.getWidth()){sputnikAliveFlag = false;}
+    }
+
 
     /*
-Input: Delta, timing
-Output: Void
-Purpose: Checks for what stage of the level we are and sets off appropriate events that correspond
-*/
+    Input: Void
+    Output: Void
+    Purpose: Updates the State and position of the of the sputnik
+    */
+    private void updateSputnikPosition(){
+        //oscillating_horizontal : true = up, false = down]
+        if(sputnikY == 250){
+            sputnikMovementFlag = false;}
+        else if(sputnikY == 230){
+            sputnikMovementFlag = true;}
+
+        if(sputnikMovementFlag){ sputnikY += 1; }
+        else{ sputnikY -= 1; }
+    }
+    /*
+    Input: Delta, timing
+    Output: Void
+    Purpose: Checks for what stage of the level we are and sets off appropriate events that correspond
+    */
     private void updatePart(float delta){
-        //Moves from Part 1 to Part 2, turns on commutation window
+        //Moves from Part 1 to Part 2, turns on commutation window, brings dragon in once communication end
         if(part == PART.PartOne && !screenOnFlag){ screenOnFlag = true;}
         else if(part == PART.PartOne && moveTimer-delta <= 0){
             part = PART.PartTwo;
-            dragon.setStart();}
-        //Moves from Part 2 to Part 3, turns on commutation window
+            dragon.setStart();
+        }
+        //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to bite enemy
         if(part == PART.PartTwo && progressBar.getScore() == 3){
             part = PART.PartThree;
             dragon.setPhase(1);
             screenOnFlag = true;
         }
+        //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to shoot fire and bite
         if(part == PART.PartThree && progressBar.getScore() == 6){
             part = PART.PartFour;
             dragon.setPhase(2);
             screenOnFlag = true;
         }
+        //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to shoot fire and laser and bite
         if(part == PART.PartFour && progressBar.getScore() == 9){
             part = PART.PartFive;
             screenOnFlag = true;
@@ -422,73 +454,42 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
         spaceCraft.updatePosition(spaceCraft.getX(), MathUtils.clamp(spaceCraft.getY(), spaceCraft.getRadius(), WORLD_HEIGHT - spaceCraft.getRadius()) );
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if the player collided with any enemy objects if they did restarts
+    */
     private void updateCheckForDeath(){
+        //Checks if the player touched the boarders
         for (SpaceBorder spaceBorder : spaceBorders) {
             if(spaceBorder.isColliding(spaceCraft)){restart();}
         }
+        //Checks if the player touched the enemy dragon or any of it's attacks
         if(dragon.isColliding(spaceCraft)){restart();}
-    }
-
-    private void updateDragon(float delta){ dragon.update(delta);}
-
-    private void updateCollectibles(){
-        checkIfNewCollectibleIsNeeded();
-        removeCollectible();
-    }
-
-    private void updatePortalLines(){
-        System.out.println(portalLines.size);
-        checkIfNewPortalLineIsNeeded();
-        updatePortalLinePosition();
-        removePortalLine();
-    }
-
-    private void checkIfNewPortalLineIsNeeded(){ if(portalLines.size < 5){createPortalLine();} }
-
-    private void createPortalLine(){
-        float height = MathUtils.random(1,3);
-        float width = MathUtils.random(16,64);
-        float y = MathUtils.random(WORLD_HEIGHT);
-        Rectangle rectangle = new Rectangle(WORLD_WIDTH, y, width,height);
-        portalLines.add(rectangle);
-    }
-
-    private void updatePortalLinePosition(){
-        if(portalLines.size > 0){
-            for (Rectangle portalLine : portalLines){
-                System.out.println(portalLine.x);
-                portalLine.x -= WORLD_WIDTH/portalLine.width;
-            }
-        }
-    }
-
-    private void removePortalLine(){
-        if(portalLines.size > 0) {
-            for (Rectangle portalLine : portalLines) {
-                if (portalLine.x + portalLine.width < 0) { portalLines.removeValue(portalLine, true);} }
-        }
-    }
-
-    private void drawDebugPortalLine(ShapeRenderer shapeRenderer){
-        if(portalLines.size > 0){
-            for (Rectangle portalLine : portalLines){
-                shapeRenderer.rect(portalLine.x, portalLine.y, portalLine.width, portalLine.height);
-            }
-        }
-    }
-
-    private void drawPortalLine(SpriteBatch batch){
-        if(portalLines.size > 0){
-            for (Rectangle portalLine : portalLines){
-                batch.draw(portalLineTexture, portalLine.x, portalLine.y, portalLine.width, portalLine.height);
-            }
-        }
     }
 
     /*
     Input: Void
     Output: Void
-    Purpose: Checks if there is need to create a new asteroid if does calls createNewAsteroid()
+    Purpose: Central update dragon, all of the dragon updates are internal
+    */
+    private void updateDragon(float delta){ dragon.update(delta);}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Central collectible update method. Updates if we need a new collectible or if one needs to be removed
+    */
+    private void updateCollectibles(){
+        checkIfNewCollectibleIsNeeded();
+        removeCollectible();
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if there is needs to create a new collectible, creates one once the dragon
+        passes over the player y line
     */
     private void checkIfNewCollectibleIsNeeded(){
         if(dragon.getX() + dragon.getWidth()/2 >= 2*WORLD_WIDTH/3 && collectibles.size < 1){
@@ -499,7 +500,7 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
     /*
     Input: Void
     Output: Void
-    Purpose: Creates a new set of boarders
+    Purpose: Creates a new collectible
     */
     private void createNewCollectible(){
         Collectible collectible = new Collectible(collectibleTexture);
@@ -508,11 +509,19 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
         collectibles.add(collectible);
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Removes a collectible if it was touched, updates the score and if score is equal to goal
+    tells level to end
+    */
     private void removeCollectible(){
         for(Collectible collectible : collectibles){
+            //If space craft collides removes collectible and increases score
             if (collectible.isColliding(spaceCraft)) {
                 collectibles.removeValue(collectible,true);
                 progressBar.update();
+                //If score is done end game
                 if(progressBar.getScore() == GOAL){
                     Gdx.input.setInputProcessor(pauseMenu.getNextLevelStage());
                     endLevelFlag = true;}
@@ -520,6 +529,80 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
         }
     }
 
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Central method for updating the portal lines
+    */
+    private void updatePortalLines(){
+        checkIfNewPortalLineIsNeeded();     //Checks if we need more
+        if(portalLines.size > 0) {
+            updatePortalLinePosition();         //Updates their position
+            removePortalLine();                 //Removes liens that are off screen
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if we need more lines, if we do makes more
+    */
+    private void checkIfNewPortalLineIsNeeded(){ if(portalLines.size < 5){createPortalLine();} }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Creates a new line
+    */
+    private void createPortalLine(){
+        float height = MathUtils.random(1,3);       //Sets a random height of the line
+        float width = MathUtils.random(16,64);      //Sets a random width of the height
+        float y = MathUtils.random(WORLD_HEIGHT);   //Sets a random position on the screen
+        Rectangle rectangle = new Rectangle(WORLD_WIDTH, y, width,height);  //Creates a rectangle
+        portalLines.add(rectangle);                 //Adds it to the array
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Updates the position of the line with the speed being a ration between the width of line and world
+    */
+    private void updatePortalLinePosition(){for (Rectangle portalLine : portalLines){ portalLine.x -= WORLD_WIDTH/portalLine.width; }}
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Removes the lines if they go off screen
+    */
+    private void removePortalLine(){
+        for (Rectangle portalLine : portalLines) {
+            if (portalLine.x + portalLine.width < 0) { portalLines.removeValue(portalLine, true);} }
+        }
+
+    /*
+    Input: ShapeRender to add to the list of things to draw
+    Output: Void
+    Purpose: Draws the wire frame of the lines
+    */
+    private void drawDebugPortalLine(ShapeRenderer shapeRenderer){
+            for (Rectangle portalLine : portalLines){ shapeRenderer.rect(portalLine.x, portalLine.y, portalLine.width, portalLine.height); }
+    }
+
+    /*
+    Input: Batch to add to the list of textures
+    Output: Void
+    Purpose: Draws the texture
+    */
+    private void drawPortalLine(SpriteBatch batch){
+        for (Rectangle portalLine : portalLines){ batch.draw(portalLineTexture, portalLine.x, portalLine.y, portalLine.width, portalLine.height); }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose:Central function for updating the space boarders
+    */
     private void updateSpaceBoarders(){
         checkIfRemoveSpaceBoarder();
         checkIfNewBoarderIsNeeded();
@@ -539,19 +622,19 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
     /*
     Input: Void
     Output: Void
-    Purpose: Checks if there is need to create a new asteroid if does calls createNewAsteroid()
+    Purpose: Checks if there is need to create a new boarder
     */
     private void checkIfNewBoarderIsNeeded(){
-        //If no asteroids on screen exits
+        //If no boarder on screen exits
         if (spaceBorders.size == 0) { createNewSpaceBoarder(0); }
-        //If the distance between the world and the new asteroid is enough
+        //If the there is only one make another one
         else if (spaceBorders.size == 1){ createNewSpaceBoarder(WORLD_WIDTH);}
     }
 
     /*
     Input: Void
     Output: Void
-    Purpose: Gets rid of the spaceboarder that's off the screen
+    Purpose: Gets rid of the space boarder that's off the screen
     */
     private void checkIfRemoveSpaceBoarder(){
         if(spaceBorders.size > 0){
@@ -560,6 +643,11 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
         }
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Updates the position of the boarders
+    */
     private void updateSpaceBoarderPosition(){ for(SpaceBorder spaceBorder : spaceBorders){ spaceBorder.updatePosition(); }}
 
     /*
@@ -575,6 +663,9 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
         collectibles.clear();
         part = PART.PartOne;
         moveTimer = MOVE_TIME;
+        sputnikAliveFlag = true;
+        sputnikMovementFlag = false;
+        sputnikY = 240;
         screenOnFlag = true;
     }
 
@@ -589,20 +680,34 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
         batch.setTransformMatrix(camera.view);
         //Batch setting up texture
         batch.begin();
+        //Draws the background
         batch.draw(backgroundTexture, 0 ,0, WORLD_WIDTH, WORLD_HEIGHT);
-        drawPortalLine(batch);
+        //If there are lines draw lines
+        if(portalLines.size > 0){drawPortalLine(batch);}
+        //Draws player
         spaceCraft.draw(batch);
+        //Draws collectibles
         for (Collectible collectible : collectibles){collectible.draw(batch);}
+        //Draws the boarder s
         for(SpaceBorder spaceBorder : spaceBorders){spaceBorder.draw(batch);}
+        //Draws the dragon
         dragon.draw(batch);
-        if(sputnikAliveFlag){batch.draw(sputnikTexture, WORLD_WIDTH/4, 240);}
-        conversationBox.draw(batch);        //Draws conversation box
+        //Draws sputnik
+        if(sputnikAliveFlag){batch.draw(sputnikTexture, WORLD_WIDTH/4, sputnikY);}
+        //Draws conversation box
+        conversationBox.draw(batch);
+        //Draws progress bar
         progressBar.draw(batch, glyphLayout, bitmapFont);
+        //Draws the pause menu frame
         if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         batch.end();
+
         //Buttons are not part of the batch
+        //Draw the start pause button
         if(!pauseMenu.getPauseFlag() && !endLevelFlag){pauseMenu.getMenuButtonStage().draw();}
+        //Draws pause menu
         else {pauseMenu.getPauseMenuScreen().draw();}
+        //Shows the exit level menu
         if(endLevelFlag) {pauseMenu.getNextLevelStage().draw();}
     }
 
@@ -614,5 +719,29 @@ Purpose: Checks for what stage of the level we are and sets off appropriate even
     private void clearScreen() {
         Gdx.gl.glClearColor(Color.BLACK.r, Color.BLACK.g, Color.BLACK.b, Color.BLACK.a); //Sets color to black
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);										 //Sends it to the buffer
+    }
+
+    /*
+Input: Void
+Output: Void
+Purpose: Destroys everything once we move onto the new screen
+*/
+    @Override
+    public void dispose() {
+        pauseMenu.dispose();
+        spaceCraftTexture.dispose();          //Player Texture
+        collectibleTexture.dispose();         //Collectible Texture
+        scaleTexture.dispose();               //Trail behind the "Dragon"
+        fireTexture.dispose();                //Texture of the "Fire" attack
+        laserTexture.dispose();               //Texture of the laser
+        borderTexture.dispose();              //Texture of the bounds on top and bottom of screen
+        dragonHeadTexture.dispose();          //Texture of the enemy
+        progressBarTexture.dispose();         //Texture of the progress bar
+        progressBarFrameTexture.dispose();    //Texture of the Frame of the Progress bar
+        backgroundTexture.dispose();          //Background
+        portalLineTexture.dispose();          //Texture of the lines flying in the background
+        profileTexture.dispose();             //Profile of the talking character
+        communicationFrameTexture.dispose();  //Frame
+        sputnikTexture.dispose();             //Sputnik NPC Texture
     }
 }

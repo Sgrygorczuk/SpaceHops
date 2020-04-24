@@ -107,6 +107,11 @@ class SpaceCraft {
         updatePosition(x, y + ySpeed);
     }
 
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Resets the speed to 0
+    */
     void restart(){ ySpeed = 0; }
 
     /*
@@ -131,7 +136,7 @@ class SpaceCraft {
     }
 
     /*
-    Input: Shaperenderd
+    Input: ShapeRenderer
     Output: Void
     Purpose: Draws the circle on the screen using render
     */
