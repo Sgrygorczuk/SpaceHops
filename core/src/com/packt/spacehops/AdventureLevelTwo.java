@@ -14,7 +14,6 @@ while in an active game environment.
 
 package com.packt.spacehops;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
@@ -22,10 +21,11 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -62,20 +62,20 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Textures
      */
-    private Texture spaceCraftTexture;          //Player Texture
-    private Texture collectibleTexture;         //Collectible Texture
-    private Texture scaleTexture;               //Trail behind the "Dragon"
-    private Texture fireTexture;                //Texture of the "Fire" attack
-    private Texture laserTexture;               //Texture of the laser
-    private Texture borderTexture;              //Texture of the bounds on top and bottom of screen
-    private Texture dragonHeadTexture;          //Texture of the enemy
-    private Texture progressBarTexture;         //Texture of the progress bar
-    private Texture progressBarFrameTexture;    //Texture of the Frame of the Progress bar
-    private Texture backgroundTexture;          //Background
-    private Texture portalLineTexture;          //Texture of the lines flying in the backgrounf
-    private Texture profileTexture;             //Profile of the talking character
-    private Texture communicationFrameTexture;  //Frame
-    private Texture sputnikTexture;             //Sputnik NPC Texture
+    private TextureRegion spaceCraftTexture;          //Player Texture
+    private TextureRegion collectibleTexture;         //Collectible Texture
+    private TextureRegion scaleTexture;               //Trail behind the "Dragon"
+    private TextureRegion fireTexture;                //Texture of the "Fire" attack
+    private TextureRegion laserTexture;               //Texture of the laser
+    private TextureRegion borderTexture;              //Texture of the bounds on top and bottom of screen
+    private TextureRegion dragonHeadTexture;          //Texture of the enemy
+    private TextureRegion progressBarTexture;         //Texture of the progress bar
+    private TextureRegion progressBarFrameTexture;    //Texture of the Frame of the Progress bar
+    private TextureRegion backgroundTexture;          //Background
+    private TextureRegion portalLineTexture;          //Texture of the lines flying in the backgrounf
+    private TextureRegion profileTexture;             //Profile of the talking character
+    private TextureRegion communicationFrameTexture;  //Frame
+    private TextureRegion sputnikTexture;             //Sputnik NPC Texture
 
     /*
     User spaceship object
@@ -119,8 +119,8 @@ class AdventureLevelTwo extends ScreenAdapter {
     private float sputnikY = 240;               //Base y position of the Sputnik
 
     //
-    private final Game game;
-    AdventureLevelTwo(Game game) { this.game = game; }
+    private final SpaceHops spaceHops;
+    AdventureLevelTwo(SpaceHops spaceHops) { this.spaceHops = spaceHops; }
 
     /*
     Input: The width and height of the screen
@@ -173,7 +173,7 @@ class AdventureLevelTwo extends ScreenAdapter {
             //Talk from NPC
         conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
             //Menus
-        pauseMenu = new PauseMenu(game);
+        pauseMenu = new PauseMenu(spaceHops);
 
     }
 
@@ -196,33 +196,37 @@ class AdventureLevelTwo extends ScreenAdapter {
     Purpose: Connects the images to the Texture objects
     */
     private void showTexture(){
+        TextureAtlas levelAtlas = spaceHops.getAssetManager().get("level_two_assets.atlas");
+        TextureAtlas shipAtlas = spaceHops.getAssetManager().get("ship_assets.atlas");
+        TextureAtlas profileAtlas = spaceHops.getAssetManager().get("profile_assets.atlas");
+        TextureAtlas uiAtlas = spaceHops.getAssetManager().get("ui_assets.atlas");
+
         //Spaceship
-        spaceCraftTexture = new Texture(Gdx.files.internal("SpaceshipPack.png"));
+        spaceCraftTexture = shipAtlas.findRegion("SpaceshipPack");
 
 
         //Collectible
-        collectibleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
+        collectibleTexture = uiAtlas.findRegion("CollectiblePack");
 
         //Enemy
-        dragonHeadTexture = new Texture(Gdx.files.internal("DragonPack.png"));
-        laserTexture = new Texture(Gdx.files.internal("Laser.png"));
-        fireTexture = new Texture(Gdx.files.internal("CloudPack.png"));
-        scaleTexture = new Texture(Gdx.files.internal("TearPack.png"));
-        borderTexture = new Texture(Gdx.files.internal("CloudBoarder.png"));
+        dragonHeadTexture = levelAtlas.findRegion("DragonPack");
+        laserTexture = levelAtlas.findRegion("Laser");
+        fireTexture = levelAtlas.findRegion("CloudPack");
+        scaleTexture = levelAtlas.findRegion("TearPack");
+        borderTexture = levelAtlas.findRegion("CloudBoarder");
 
         //Background
-        backgroundTexture = new Texture(Gdx.files.internal("PortalBackground.png"));
-        portalLineTexture = new Texture(Gdx.files.internal("PortalLines.png"));
-        sputnikTexture = new Texture(Gdx.files.internal("Spudnik.png"));
+        backgroundTexture = levelAtlas.findRegion("PortalBackground");
+        portalLineTexture = levelAtlas.findRegion("PortalLines");
+        sputnikTexture = levelAtlas.findRegion("Spudnik");
 
         //Communication Frame
-        communicationFrameTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
-        profileTexture = new Texture(Gdx.files.internal("RussianPack.png"));
+        communicationFrameTexture = uiAtlas.findRegion("CommunicationFrame");
+        profileTexture = profileAtlas.findRegion("RussianPack");
 
         //Progress Bar
-        progressBarTexture = new Texture(Gdx.files.internal("Progress.png"));
-        progressBarFrameTexture = new Texture(Gdx.files.internal("ProgressBar.png"));
-
+        progressBarTexture = uiAtlas.findRegion("Progress");
+        progressBarFrameTexture = uiAtlas.findRegion("ProgressBar");
     }
 
     /*
@@ -363,7 +367,7 @@ class AdventureLevelTwo extends ScreenAdapter {
     */
     private void updateSputnik(){
         updateSputnikPosition();
-        if(dragon.getX() + dragon.getWidth() >= WORLD_WIDTH/4 + sputnikTexture.getWidth()){sputnikAliveFlag = false;}
+        if(dragon.getX() + dragon.getWidth() >= WORLD_WIDTH/4 + sputnikTexture.getRegionWidth()){sputnikAliveFlag = false;}
     }
 
 
@@ -729,19 +733,5 @@ Purpose: Destroys everything once we move onto the new screen
     @Override
     public void dispose() {
         pauseMenu.dispose();
-        spaceCraftTexture.dispose();          //Player Texture
-        collectibleTexture.dispose();         //Collectible Texture
-        scaleTexture.dispose();               //Trail behind the "Dragon"
-        fireTexture.dispose();                //Texture of the "Fire" attack
-        laserTexture.dispose();               //Texture of the laser
-        borderTexture.dispose();              //Texture of the bounds on top and bottom of screen
-        dragonHeadTexture.dispose();          //Texture of the enemy
-        progressBarTexture.dispose();         //Texture of the progress bar
-        progressBarFrameTexture.dispose();    //Texture of the Frame of the Progress bar
-        backgroundTexture.dispose();          //Background
-        portalLineTexture.dispose();          //Texture of the lines flying in the background
-        profileTexture.dispose();             //Profile of the talking character
-        communicationFrameTexture.dispose();  //Frame
-        sputnikTexture.dispose();             //Sputnik NPC Texture
     }
 }

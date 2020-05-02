@@ -77,10 +77,10 @@ class Dragon {
     private float laserTimer = LASER_TIME;
 
     //Textures
-    private Texture scaleTexture;
+    private TextureRegion scaleTexture;
     private TextureRegion[][] headTexture;
-    private Texture bulletTexture;
-    private Texture laserTexture;
+    private TextureRegion bulletTexture;
+    private TextureRegion laserTexture;
 
     //Texture and Animation
     private static final int HEAD_TILE_WIDTH = 120;			//The width of each tile in the texture
@@ -108,7 +108,7 @@ class Dragon {
     Output: Void
     Purpose: Constructor makes necessary shapes and sets up textures
     */
-    Dragon(Texture headTexture, Texture scaleTexture, Texture bulletTexture, Texture laserTexture){
+    Dragon(TextureRegion headTexture, TextureRegion scaleTexture, TextureRegion bulletTexture, TextureRegion laserTexture){
         //Sets up the
         head = new Rectangle(-HEAD_WIDTH, 240, HEAD_WIDTH, HEAD_HEIGHT);
         horn = new Rectangle(-HEAD_WIDTH, 240, HORN_WIDTH, HEAD_HEIGHT + HORN_HEIGHT);

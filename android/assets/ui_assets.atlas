@@ -1,0 +1,181 @@
+
+ui_assets.png
+size: 1024,512
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+AdventurePressed
+  rotate: false
+  xy: 2, 264
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+AdventureUnpressed
+  rotate: false
+  xy: 2, 162
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+BackButton
+  rotate: false
+  xy: 306, 184
+  size: 40, 180
+  orig: 40, 180
+  offset: 0, 0
+  index: -1
+BackButtonUnpressed
+  rotate: false
+  xy: 306, 184
+  size: 40, 180
+  orig: 40, 180
+  offset: 0, 0
+  index: -1
+BackButtonPressed
+  rotate: false
+  xy: 306, 2
+  size: 40, 180
+  orig: 40, 180
+  offset: 0, 0
+  index: -1
+Bottom
+  rotate: false
+  xy: 2, 366
+  size: 320, 25
+  orig: 320, 25
+  offset: 0, 0
+  index: -1
+ButtonPressed
+  rotate: false
+  xy: 2, 13
+  size: 160, 45
+  orig: 160, 45
+  offset: 0, 0
+  index: -1
+ButtonUnpressed
+  rotate: false
+  xy: 348, 227
+  size: 160, 45
+  orig: 160, 45
+  offset: 0, 0
+  index: -1
+CollectiblePack
+  rotate: false
+  xy: 510, 232
+  size: 120, 40
+  orig: 120, 40
+  offset: 0, 0
+  index: -1
+CommunicationFrame
+  rotate: false
+  xy: 2, 443
+  size: 360, 64
+  orig: 360, 64
+  offset: 0, 0
+  index: -1
+EndlessPressed
+  rotate: false
+  xy: 154, 264
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+EndlessUnpressed
+  rotate: false
+  xy: 2, 60
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+LevelButtonPressed
+  rotate: false
+  xy: 707, 482
+  size: 150, 25
+  orig: 150, 25
+  offset: 0, 0
+  index: -1
+LevelButtonUnavailable
+  rotate: false
+  xy: 348, 200
+  size: 150, 25
+  orig: 150, 25
+  offset: 0, 0
+  index: -1
+LevelButtonUnpressed
+  rotate: false
+  xy: 859, 482
+  size: 150, 25
+  orig: 150, 25
+  offset: 0, 0
+  index: -1
+MenuPressed
+  rotate: false
+  xy: 348, 158
+  size: 60, 40
+  orig: 60, 40
+  offset: 0, 0
+  index: -1
+MenuUnpressed
+  rotate: false
+  xy: 164, 18
+  size: 60, 40
+  orig: 60, 40
+  offset: 0, 0
+  index: -1
+PlayDown
+  rotate: false
+  xy: 154, 162
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+PlayUp
+  rotate: false
+  xy: 154, 60
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+Progress
+  rotate: false
+  xy: 364, 478
+  size: 341, 29
+  orig: 341, 29
+  offset: 0, 0
+  index: -1
+ProgressBar
+  rotate: false
+  xy: 2, 393
+  size: 360, 48
+  orig: 360, 48
+  offset: 0, 0
+  index: -1
+QuitPressed
+  rotate: false
+  xy: 364, 376
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+QuitUnpressed
+  rotate: false
+  xy: 516, 376
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+ResumePressed
+  rotate: false
+  xy: 348, 274
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1
+ResumeUnpressed
+  rotate: false
+  xy: 500, 274
+  size: 150, 100
+  orig: 150, 100
+  offset: 0, 0
+  index: -1

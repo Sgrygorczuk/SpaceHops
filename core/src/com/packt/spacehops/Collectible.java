@@ -44,7 +44,7 @@ public class Collectible {
     Output: Void
     Purpose: Constructor that breaks down the texture nto frame and create the circle object
     */
-    Collectible(Texture collectibleTexture){
+    Collectible(TextureRegion collectibleTexture){
         TextureRegion[][] collectibleTextures = new TextureRegion(collectibleTexture).split(TILE_WIDTH, TILE_HEIGHT); //Breaks down the texture into tiles
 
         //Sets the animation to be the texture 0-3 and sets it to loop

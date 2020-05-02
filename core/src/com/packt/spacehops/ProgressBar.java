@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
@@ -30,15 +31,15 @@ class ProgressBar {
     private final Rectangle innerRectangle;
 
     //Textures
-    private final Texture outerTexture;
-    private final Texture innerTexture;
+    private final TextureRegion outerTexture;
+    private final TextureRegion innerTexture;
 
     /*
     Input: Screen dimensions, textures for the frame and progress bar
     Output: Void
     Purpose: Initializes the size and location of the progress bar based on the dimensions of the screen
     */
-    ProgressBar(float screenWidth, float screenHeight, Texture outerTexture, Texture innerTexture){
+    ProgressBar(float screenWidth, float screenHeight, TextureRegion outerTexture, TextureRegion innerTexture){
         //Calculate width adn height of frame and progress bar
         outerRectangleWidth = 3*screenWidth/4;
         outerRectangleHeight = screenHeight/10;

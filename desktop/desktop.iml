@@ -32,8 +32,11 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="core" exported="" />
+    <orderEntry type="library" exported="" name="Gradle: gdx-tools-1.9.10" level="project" />
     <orderEntry type="library" exported="" name="Gradle: gdx-backend-lwjgl-1.9.10" level="project" />
     <orderEntry type="library" exported="" name="Gradle: gdx-platform-1.9.10-natives-desktop" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: gdx-backend-headless-1.9.10" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: gdx-freetype-1.9.10" level="project" />
     <orderEntry type="library" exported="" name="Gradle: gdx-1.9.10" level="project" />
     <orderEntry type="library" exported="" name="Gradle: lwjgl_util-2.9.3" level="project" />
     <orderEntry type="library" exported="" name="Gradle: lwjgl-2.9.3" level="project" />

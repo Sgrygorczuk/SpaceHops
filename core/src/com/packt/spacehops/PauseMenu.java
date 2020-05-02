@@ -1,9 +1,8 @@
 package com.packt.spacehops;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -29,29 +28,38 @@ class PauseMenu {
     private float buttonHeight;         //Height of the buttons so that we can
     private float buttonWidth;
 
-    private Rectangle menuBackground;       //Rectangle that keeps the info of the menu background
-    private Texture pauseMenuTexture;       //Texture of the menu's background
+    private TextureAtlas uiAtlas;
+
+    private Rectangle menuBackground;              //Rectangle that keeps the info of the menu background
+    private TextureRegion pauseMenuTexture;       //Texture of the menu's background
 
     //TO BE CHANGED TO NEXT LEVEL
-    private Texture nextLevelUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
-    private Texture nextLevelDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+    private TextureRegion nextLevelUpTexture;
+    private TextureRegion nextLevelDownTexture;
 
     private boolean pauseFlag = false;      //Tells us if the game is paused
     private boolean disposeFlag = false;    //Tells us if we need to get rid off the assets
 
-    private Game game;                      //Sends up to different screen
+    private SpaceHops spaceHops;                      //Sends up to different screen
 
     /*
     Input: Game, object used to set up screens
     Output: Void
     Purpose: Constructors, creates all the necessary objects
     */
-    PauseMenu(Game game){
-        this.game = game;
+    PauseMenu(SpaceHops spaceHops){
+        this.spaceHops = spaceHops;
+        setUp();
         showMenuButton();                   //Creates the menu button
         showPauseMenu();                    //Creates the buttons inside the pause menu
         showNextLevelMenu();
         showMenuBackground();               //Sets up vars to display the background of the pause menu
+    }
+
+    void setUp(){
+        uiAtlas = spaceHops.getAssetManager().get("ui_assets.atlas");
+        nextLevelUpTexture = uiAtlas.findRegion("ButtonUnpressed");
+        nextLevelDownTexture = uiAtlas.findRegion("ButtonPressed");
     }
 
     /*
@@ -106,7 +114,7 @@ class PauseMenu {
                 (float) (WORLD_HEIGHT/2 - 1.5 * buttonHeight - 10),
                 buttonWidth + 20, 2 * buttonHeight + 40);
 
-        pauseMenuTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
+        pauseMenuTexture = uiAtlas.findRegion("CommunicationFrame");
     }
 
     /*
@@ -120,8 +128,8 @@ class PauseMenu {
         Gdx.input.setInputProcessor(menuButtonScreen);    //Give it the control
 
         //Sets up textures used by the button
-        Texture menuUpTexture = new Texture(Gdx.files.internal("MenuUnpressed.png"));
-        Texture menuDownTexture = new Texture(Gdx.files.internal("MenuPressed.png"));
+        TextureRegion menuUpTexture = uiAtlas.findRegion("MenuUnpressed");
+        TextureRegion menuDownTexture = uiAtlas.findRegion("MenuPressed");
 
         //Creates button and position
         ImageButton menuButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(menuUpTexture)), new TextureRegionDrawable(menuDownTexture));
@@ -153,11 +161,11 @@ class PauseMenu {
         pauseMenuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
 
         //Sets up the textures
-        Texture quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
-        Texture quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+        TextureRegion quitUpTexture = uiAtlas.findRegion("QuitUnpressed");
+        TextureRegion quitDownTexture = uiAtlas.findRegion("QuitPressed");
 
-        Texture resumeUpTexture = new Texture(Gdx.files.internal("ResumeUnpressed.png"));
-        Texture resumeDownTexture = new Texture(Gdx.files.internal("ResumePressed.png"));
+        TextureRegion resumeUpTexture = uiAtlas.findRegion("ResumeUnpressed");
+        TextureRegion resumeDownTexture = uiAtlas.findRegion("ResumePressed");
 
         //Sets up the buttons
         ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
@@ -188,7 +196,7 @@ class PauseMenu {
             quitButton.addListener(new ActorGestureListener() {@Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                game.setScreen(new StartScreen(game));
+                spaceHops.setScreen(new LoadingScreen(spaceHops, 0));
                 disposeFlag = !disposeFlag;
                 dispose();
             }
@@ -213,8 +221,8 @@ class PauseMenu {
         nextLevelStage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
 
         //Sets up the textures
-        Texture quitUpTexture = new Texture(Gdx.files.internal("QuitUnpressed.png"));
-        Texture quitDownTexture = new Texture(Gdx.files.internal("QuitPressed.png"));
+        TextureRegion quitUpTexture = uiAtlas.findRegion("QuitUnpressed");
+        TextureRegion quitDownTexture = uiAtlas.findRegion("QuitPressed");
 
         //Sets up the buttons
         ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
@@ -230,7 +238,7 @@ class PauseMenu {
             quitButton.addListener(new ActorGestureListener() {@Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                game.setScreen(new StartScreen(game));
+                spaceHops.setScreen(new LoadingScreen(spaceHops, 0));
                 disposeFlag = !disposeFlag;
                 dispose();
             }
@@ -269,8 +277,8 @@ class PauseMenu {
     */
     private void chooseLevel(int levelChoice){
         switch (levelChoice) {
-            case 0: {game.setScreen(new AdventureLevelOne(game));}
-            case 1: {game.setScreen(new AdventureLevelTwo(game));}
+            case 0: {spaceHops.setScreen(new AdventureLevelOne(spaceHops));}
+            case 1: {spaceHops.setScreen(new AdventureLevelTwo(spaceHops));}
         }
     }
 
@@ -289,7 +297,6 @@ class PauseMenu {
     void dispose() {
         menuButtonScreen.dispose();
         pauseMenuScreen.dispose();
-        pauseMenuTexture.dispose();
     }
 
 }

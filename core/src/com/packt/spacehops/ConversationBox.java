@@ -35,7 +35,7 @@ class ConversationBox {
     private final Rectangle profileRectangle;
 
     //Texture and Animation
-    private final Texture outerTexture;
+    private final TextureRegion outerTexture;
     private static final int TILE_WIDTH = 32;			//The width of each tile in the texture
     private static final int TILE_HEIGHT = 32;			//The height of each tile in the texture
     private static final float FRAME_DURATION = 0.25f;	//How long each tile lasts on screen
@@ -51,7 +51,7 @@ class ConversationBox {
     Purpose: Calculate the dimensions of the frame, profile image and the change at which it opens
     the frame
     */
-    ConversationBox(float screenWidth, float screenHeight, Texture outerTexture, Texture profileTexture){
+    ConversationBox(float screenWidth, float screenHeight, TextureRegion outerTexture, TextureRegion profileTexture){
         //Calculate the dimensions
         outerRectangleWidth = 3*screenWidth/4;
         outerRectangleHeight = screenHeight/8;

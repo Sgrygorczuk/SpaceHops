@@ -6,6 +6,7 @@ package com.packt.spacehops;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
@@ -26,15 +27,15 @@ class SpaceBorder {
     private static final float SPEED = 1;
 
     //Textures
-    private Texture floorTexture;
-    private Texture ceilingTexture;
+    private TextureRegion floorTexture;
+    private TextureRegion ceilingTexture;
 
     /*
     Input: Void
     Output: Void
     Constructor that initializes a boarder
     */
-    SpaceBorder(float initialX, Texture top, Texture bottom){
+    SpaceBorder(float initialX, TextureRegion top, TextureRegion bottom){
         //Sets up textures
         floorTexture = bottom;
         ceilingTexture = top;

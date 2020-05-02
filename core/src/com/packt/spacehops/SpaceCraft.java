@@ -39,7 +39,7 @@ class SpaceCraft {
     Output: Void
     Purpose: Constructed initializes a copy of the Flappee Bee
     */
-    SpaceCraft(Texture spaceCraftTexture) {
+    SpaceCraft(TextureRegion spaceCraftTexture) {
 		/*
 	Texture
 	 */

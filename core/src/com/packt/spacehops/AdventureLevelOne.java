@@ -26,6 +26,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
@@ -62,16 +64,16 @@ class AdventureLevelOne extends ScreenAdapter {
     /*
     Textures
      */
-    private Texture topAsteroidTexture;
-    private Texture bottomAsteroidTexture;
-    private Texture earthTexture;
-    private Texture moonTexture;
-    private Texture collectibleTexture;
-    private Texture progressBarTexture;
-    private Texture profileTexture;
-    private Texture communicationFrameTexture;
-    private Texture progressBarFrameTexture;
-    private Texture spaceCraftTexture;
+    private TextureRegion topAsteroidTexture;
+    private TextureRegion bottomAsteroidTexture;
+    private TextureRegion earthTexture;
+    private TextureRegion moonTexture;
+    private TextureRegion collectibleTexture;
+    private TextureRegion progressBarTexture;
+    private TextureRegion profileTexture;
+    private TextureRegion communicationFrameTexture;
+    private TextureRegion progressBarFrameTexture;
+    private TextureRegion spaceCraftTexture;
 
     /*
     User spaceship object
@@ -118,8 +120,8 @@ class AdventureLevelOne extends ScreenAdapter {
     private boolean screenOnFlag = true;        //Tells screen that the conversation box is on
 
     //
-    private final Game game;
-    AdventureLevelOne(Game game) { this.game = game; }
+    private final SpaceHops spaceHops;
+    AdventureLevelOne(SpaceHops spaceHops) { this.spaceHops = spaceHops; }
 
     /*
     Input: The width and height of the screen
@@ -166,7 +168,7 @@ class AdventureLevelOne extends ScreenAdapter {
         earth = new Planet(150,150,100, earthTexture);
         earth.createMoon(20,moonTexture);
 
-        pauseMenu = new PauseMenu(game);
+        pauseMenu = new PauseMenu(spaceHops);
         pauseMenu.createNextLevelButton(1);
 
         //Player UI
@@ -193,27 +195,32 @@ class AdventureLevelOne extends ScreenAdapter {
     Purpose: Connects the images to the Texture objects
     */
     private void showTexture(){
+        TextureAtlas levelAtlas = spaceHops.getAssetManager().get("level_one_assets.atlas");
+        TextureAtlas shipAtlas = spaceHops.getAssetManager().get("ship_assets.atlas");
+        TextureAtlas profileAtlas = spaceHops.getAssetManager().get("profile_assets.atlas");
+        TextureAtlas uiAtlas = spaceHops.getAssetManager().get("ui_assets.atlas");
+
         //AsteroidTextures
-        topAsteroidTexture = new Texture(Gdx.files.internal("TowerUp.png"));
-        bottomAsteroidTexture = new Texture(Gdx.files.internal("TowerDown.png"));
+        topAsteroidTexture = levelAtlas.findRegion("TowerUp");
+        bottomAsteroidTexture = levelAtlas.findRegion("TowerDown");
 
         //Spaceship
-        spaceCraftTexture = new Texture(Gdx.files.internal("SpaceshipPack.png"));
+        spaceCraftTexture = shipAtlas.findRegion("SpaceshipPack");
 
         //Background
-        earthTexture = new Texture(Gdx.files.internal("Earth.png"));
-        moonTexture = new Texture(Gdx.files.internal("Moon.png"));
+        earthTexture = levelAtlas.findRegion("Earth");
+        moonTexture = levelAtlas.findRegion("Moon");
 
         //Collectible
-        collectibleTexture = new Texture(Gdx.files.internal("CollectiblePack.png"));
+        collectibleTexture = uiAtlas.findRegion("CollectiblePack");
 
         //Progress Bar
-        progressBarTexture = new Texture(Gdx.files.internal("Progress.png"));
-        progressBarFrameTexture = new Texture(Gdx.files.internal("ProgressBar.png"));
+        progressBarTexture = uiAtlas.findRegion("Progress");
+        progressBarFrameTexture = uiAtlas.findRegion("ProgressBar");
 
         //Communication Frame
-        communicationFrameTexture = new Texture(Gdx.files.internal("CommunicationFrame.png"));
-        profileTexture = new Texture(Gdx.files.internal("Profile_Pack.png"));
+        communicationFrameTexture = uiAtlas.findRegion("CommunicationFrame");
+        profileTexture = profileAtlas.findRegion("Profile_Pack");
     }
 
     /*
@@ -335,7 +342,7 @@ class AdventureLevelOne extends ScreenAdapter {
     Purpose: Creates a new asteroid row and adds it to the array
     */
     private void createNewAsteroid(){
-        Asteroids newAsteroid = new Asteroids(topAsteroidTexture, bottomAsteroidTexture, collectibleTexture);
+        Asteroids newAsteroid = new Asteroids(topAsteroidTexture, bottomAsteroidTexture);
         newAsteroid.setPosition(WORLD_WIDTH + newAsteroid.getRadius());
         asteroids.add(newAsteroid);
     }
@@ -678,15 +685,5 @@ class AdventureLevelOne extends ScreenAdapter {
     @Override
     public void dispose() {
         pauseMenu.dispose();
-        topAsteroidTexture.dispose();
-        bottomAsteroidTexture.dispose();
-        earthTexture.dispose();
-        moonTexture.dispose();
-        collectibleTexture.dispose();
-        communicationFrameTexture.dispose();
-        progressBarTexture.dispose();
-        profileTexture.dispose();
-        progressBarFrameTexture.dispose();
-        spaceCraftTexture.dispose();
     }
 }

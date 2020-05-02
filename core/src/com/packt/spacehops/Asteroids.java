@@ -50,15 +50,15 @@ class Asteroids{
     /*
     Textures
      */
-    private final Texture floorTexture;
-    private final Texture ceilingTexture;
+    private final TextureRegion floorTexture;
+    private final TextureRegion ceilingTexture;
 
     /*
     Input: Delta
     Output: Void
     Purpose: Flower constructor, creates the rectangle and circle on top, and places it at -400 to 0 y
     */
-    Asteroids(Texture floorTexture, Texture ceilingTexture, Texture collectibleTexture){
+    Asteroids(TextureRegion floorTexture, TextureRegion ceilingTexture){
         this.ceilingTexture = ceilingTexture;
         this.floorTexture = floorTexture;
 
@@ -170,7 +170,7 @@ class Asteroids{
     Purpose: Adds the bottom flower texture
     */
     private void drawFloor(SpriteBatch batch){
-        float textureX = floorCollisionCircle.x - floorTexture.getWidth()/2;
+        float textureX = floorCollisionCircle.x -  (float) floorTexture.getRegionWidth()/2;
         float textureY = floorCollisionRectangle.y - 220 + floorCollisionCircle.radius;
         batch.draw(floorTexture, textureX, textureY);
     }
@@ -181,7 +181,7 @@ class Asteroids{
     Purpose: Adds the top flower texture
     */
     private void drawCeiling(SpriteBatch batch){
-        float textureX = ceilingCollisionCircle.x - ceilingTexture.getWidth()/2;
+        float textureX = ceilingCollisionCircle.x - (float) ceilingTexture.getRegionWidth()/2;
         float textureY = ceilingCollisionRectangle.getY() - ASTEROID_CIRCLE_RADIUS;
         batch.draw(ceilingTexture, textureX, textureY);
     }

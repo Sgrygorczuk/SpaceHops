@@ -9,6 +9,7 @@ package com.packt.spacehops;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
@@ -17,7 +18,7 @@ import com.badlogic.gdx.utils.Array;
 class Planet{
 
     //Texture of the planet
-    private Texture planetTexture;
+    private TextureRegion planetTexture;
 
     //Objects the class holds
     private final Circle planet;
@@ -33,7 +34,7 @@ class Planet{
     Output: Void
     Purpose: Central object that the moons will orbit
     */
-    Planet(float x, float y, float RADIUS, Texture planetTexture){
+    Planet(float x, float y, float RADIUS, TextureRegion planetTexture){
         //Sets dimensions
         this.x = x;
         this.y = y;
@@ -49,7 +50,7 @@ class Planet{
     Output: Void
     Purpose: Initializes all the variables that are going to be displayed
     */
-    void createMoon(float radius, Texture moonTexture){
+    void createMoon(float radius, TextureRegion moonTexture){
         //Create a random angle between 45 and 90 so each moon has a different orbit.
         float angle = MathUtils.random(45,90);
         //Calculates the x and y coordinate extensions to match that angle
@@ -121,7 +122,7 @@ class Moon{
     private final Circle moon;
 
     //Image texture
-    private Texture moonTexture;
+    private TextureRegion moonTexture;
 
     //Flags
     private boolean goingDownFlag = true;
@@ -132,7 +133,7 @@ class Moon{
     Output: Void
     Purpose: Create a moon object and it's path
     */
-    Moon(float xMax, float xMin, float yMax, float yMin, float RADIUS, Texture moonTexture){
+    Moon(float xMax, float xMin, float yMax, float yMin, float RADIUS, TextureRegion moonTexture){
         //Dimensions
         this.x = xMax;
         this.y = yMax;

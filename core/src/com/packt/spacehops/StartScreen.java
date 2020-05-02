@@ -1,14 +1,15 @@
 package com.packt.spacehops;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -30,17 +31,19 @@ class StartScreen extends ScreenAdapter {
     private Camera camera;				 //The camera viewing the viewport
     private SpriteBatch batch;			 //Batch that holds all of the textures
 
-    private Texture currentBackgroundTexture;
-    private Texture newBackgroundTexture;
-    private Texture mainScreenUpTexture;
-    private Texture mainScreenDownTexture;
-    private Texture sideScreenUpTexture;
-    private Texture sideScreenDownTexture;
-    private Texture sidScreenUnavailableTenure;
-    private Texture backButtonUnpressedTexture;
-    private Texture backButtonPressedTexture;
-    private Texture doorUpTexture;
-    private Texture doorDownTexture;
+    private TextureAtlas screenAtlas;
+    private TextureAtlas buttonAtlas;
+
+    private TextureRegion currentBackgroundTexture;
+    private TextureRegion newBackgroundTexture;
+    private TextureRegion mainScreenUpTexture;
+    private TextureRegion mainScreenDownTexture;
+    private TextureRegion sideScreenUpTexture;
+    private TextureRegion sideScreenDownTexture;
+    private TextureRegion backButtonUnpressedTexture;
+    private TextureRegion backButtonPressedTexture;
+    private TextureRegion doorUpTexture;
+    private TextureRegion doorDownTexture;
 
     //Stage and the buttons it holds
     private Stage mainStage;
@@ -76,16 +79,24 @@ class StartScreen extends ScreenAdapter {
     private float currentX = 0;
     private float doorUpY;
     private float doorDownY;
+    private float textMove = 0;
 
     //Static Variables
     private final static float RATE_OF_CHANGE = 20;         //How fast items move left and right
     private final static float DOOR_RATE_OF_CHANGE = 10;     //How fast doors close and open
     private final static float BUTTON_SPACING_GAP = 6;      //How much space there is between buttons
 
+    /*
+    Bitmap and GlyphLayout
+    */
+
+    private BitmapFont bitmapFont;
+    private GlyphLayout glyphLayout;
+
     //Game for changing screens
-    private final Game game;
+    private final SpaceHops spaceHops;
     //Constructor that keeps the screen info
-    StartScreen(Game game) { this.game = game; }
+    StartScreen(SpaceHops spaceHops) { this.spaceHops = spaceHops; }
 
     //Flags
     private int currentScreenPositionFlag = 1; //1 Center, 0 Left, 2 Right. Where we are now
@@ -121,6 +132,11 @@ class StartScreen extends ScreenAdapter {
         showRightButton();  //Creates the right screen buttons and their functionality
         showShipyardButtons();
         showInitialize();   //Initializes extra variables
+
+        //BitmapFont and GlyphLayout
+        bitmapFont = new BitmapFont();
+        bitmapFont = spaceHops.getAssetManager().get("Fonts/ButtonFont.fnt");
+        glyphLayout = new GlyphLayout();
     }
 
     /*
@@ -129,23 +145,25 @@ class StartScreen extends ScreenAdapter {
     Purpose: Sets up all the textures that will be used for display background and buttons
     */
     private void showTextures(){
+        screenAtlas = spaceHops.getAssetManager().get("main_screen_assets.atlas");
+        buttonAtlas = spaceHops.getAssetManager().get("ui_assets.atlas");
+
         //Background texture
-        currentBackgroundTexture = new Texture(Gdx.files.internal("MainScreen.png"));
+        currentBackgroundTexture = screenAtlas.findRegion("MainScreen");
 
         //Central Screen Textures
-        mainScreenUpTexture = new Texture(Gdx.files.internal("ButtonUnpressed.png"));
-        mainScreenDownTexture = new Texture(Gdx.files.internal("ButtonPressed.png"));
+        mainScreenUpTexture = buttonAtlas.findRegion("ButtonUnpressed");
+        mainScreenDownTexture = buttonAtlas.findRegion("ButtonPressed");
 
         //Side Screen Textures
-        sideScreenUpTexture = new Texture(Gdx.files.internal("LevelButtonUnpressed.png"));
-        sideScreenDownTexture = new Texture(Gdx.files.internal("LevelButtonPressed.png"));
-        sidScreenUnavailableTenure = new Texture(Gdx.files.internal("LevelButtonUnavailable.png"));
-        backButtonUnpressedTexture = new Texture(Gdx.files.internal("BackButtonUnpressed.png"));
-        backButtonPressedTexture = new Texture(Gdx.files.internal("BackButtonPressed.png"));
+        sideScreenUpTexture = buttonAtlas.findRegion("LevelButtonUnpressed");
+        sideScreenDownTexture = buttonAtlas.findRegion("LevelButtonPressed");
+        backButtonUnpressedTexture = buttonAtlas.findRegion("BackButtonUnpressed");
+        backButtonPressedTexture = buttonAtlas.findRegion("BackButtonPressed");
 
         //
-        doorUpTexture = new Texture(Gdx.files.internal("DoorUp.png"));
-        doorDownTexture = new Texture(Gdx.files.internal("DoorDown.png"));
+        doorUpTexture = screenAtlas.findRegion("DoorUp");
+        doorDownTexture = screenAtlas.findRegion("DoorDown");
     }
 
     /*
@@ -166,7 +184,6 @@ class StartScreen extends ScreenAdapter {
     Purpose: Sets the buttons, adding in their textures and functionality
     */
     private void showMainButtons(){
-
         /*
         Set Up
          */
@@ -175,7 +192,7 @@ class StartScreen extends ScreenAdapter {
         ImageButton[] buttons = {adventureButton, endlessButton, shipyardButton, settingsButton};
 
         //Creates the buttons at equal distance in a row with same background images
-        ImageButton[] newButtons = setUpButtons(buttons, 5*WORLD_HEIGHT/12, WORLD_WIDTH/2, mainScreenUpTexture, mainScreenDownTexture);
+        ImageButton[] newButtons = setUpButtons(buttons, WORLD_WIDTH/2, mainScreenUpTexture, mainScreenDownTexture);
 
         //Realizes the buttons because the copies inside the for loop are local and other wise the
         //global ones stay null
@@ -246,7 +263,7 @@ class StartScreen extends ScreenAdapter {
                 adventureLevelFourButton, adventureLevelFiveButton};
 
         //Set up the buttons
-        ImageButton[] newButtons = setUpButtons(buttons, 5*WORLD_HEIGHT/12, -WORLD_WIDTH/2, sideScreenUpTexture, sideScreenDownTexture);
+        ImageButton[] newButtons = setUpButtons(buttons, -WORLD_WIDTH/2, sideScreenUpTexture, sideScreenDownTexture);
 
         //Reinitialize them because the ones in the array aren't global
         //And adds them to stage so that we can dispose of them when leaving screen
@@ -280,7 +297,7 @@ class StartScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                game.setScreen(new AdventureLevelOne(game));
+                spaceHops.setScreen(new LoadingScreen(spaceHops,1));
                 dispose();
             }
         });
@@ -290,7 +307,7 @@ class StartScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                game.setScreen(new AdventureLevelTwo(game));
+                spaceHops.setScreen(new AdventureLevelTwo(spaceHops));
                 dispose();
             }
         });
@@ -318,7 +335,7 @@ class StartScreen extends ScreenAdapter {
         endlessLevelFourButton, endlessLevelFiveButton, endlessLevelSixButton};
 
         //Initializes the button with position and texture
-        ImageButton[] newButtons = setUpButtons(buttons, 5*WORLD_HEIGHT/12, 3*WORLD_WIDTH/2, sideScreenUpTexture, sideScreenDownTexture);
+        ImageButton[] newButtons = setUpButtons(buttons, 3*WORLD_WIDTH/2, sideScreenUpTexture, sideScreenDownTexture);
 
         //Reinitialize the buttons because the ones in the array aren't global
         //And adds them to the stage so they can be disposed of after we leave this screen
@@ -385,7 +402,7 @@ class StartScreen extends ScreenAdapter {
     */
     private void showInitialize(){
         //Keeps track of the images that the new background is going to be attached to
-        paths = new String[] {"LeftScreen.png", "MainScreen.png", "RightScreen.png"};
+        paths = new String[] {"LeftScreen", "MainScreen", "RightScreen"};
         //Keeps track of all of the buttons that exits with in the first three main screens
         buttonArray = new ImageButton[] {adventureButton, endlessButton, settingsButton, shipyardButton,
                 leftBackButton, rightBackButton, adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
@@ -395,8 +412,8 @@ class StartScreen extends ScreenAdapter {
         //Batch for drawing the textures
         batch = new SpriteBatch();
 
-        doorUpY = WORLD_HEIGHT;                     //Places upperDoor above screen
-        doorDownY = 0 - doorDownTexture.getHeight();//Places down door below screen
+        doorUpY = WORLD_HEIGHT;                             //Places upperDoor above screen
+        doorDownY = 0 - doorDownTexture.getRegionHeight();  //Places down door below screen
     }
 
     /*
@@ -405,12 +422,12 @@ class StartScreen extends ScreenAdapter {
     Output: Array of initialized buttons
     Purpose: Sets the buttons, adding in their textures and functionality
     */
-    private ImageButton[] setUpButtons(ImageButton[] buttons, float height, float x, Texture upTexture, Texture downTexture){
+    private ImageButton[] setUpButtons(ImageButton[] buttons, float x, TextureRegion upTexture, TextureRegion downTexture){
         for(int i = 0; i < buttons.length; i++){
             //Create the button
             buttons[i] =  new ImageButton(new TextureRegionDrawable(upTexture), new TextureRegionDrawable(downTexture));
             //Calculate the height of the new button
-            float newHeight = height - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
+            float newHeight = (float) 200.0 - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
             //Position the button
             buttons[i].setPosition(x, newHeight, Align.center);
         }
@@ -451,8 +468,7 @@ class StartScreen extends ScreenAdapter {
     Purpose: Shows shipyard background and buttons
     */
     private void setUpShipyard(){
-        currentBackgroundTexture.dispose(); //Gets rid of background
-        currentBackgroundTexture = new Texture(Gdx.files.internal("Shipyard.png"));
+        currentBackgroundTexture = screenAtlas.findRegion("Shipyard");
         Gdx.input.setInputProcessor(shipyardStage); //Gives button power to mainStage
     }
 
@@ -462,8 +478,7 @@ class StartScreen extends ScreenAdapter {
     Purpose: Shows main screen background and buttons
     */
     private void setMain(){
-        currentBackgroundTexture.dispose(); //Gets rid of background
-        currentBackgroundTexture = new Texture(Gdx.files.internal(paths[1]));
+        currentBackgroundTexture = screenAtlas.findRegion((paths[1]));
         Gdx.input.setInputProcessor(mainStage); //Gives button power to mainStage
     }
 
@@ -499,7 +514,7 @@ class StartScreen extends ScreenAdapter {
     Output: Void
     Purpose: When screen is moving it grabs a new texture based on what the destination is
     */
-    private void setNewBackgroundTexture(){newBackgroundTexture = new Texture(Gdx.files.internal(paths[destinationFlag]));}
+    private void setNewBackgroundTexture(){newBackgroundTexture = screenAtlas.findRegion(paths[destinationFlag]);}
 
     /*
     Input: Void
@@ -536,10 +551,8 @@ class StartScreen extends ScreenAdapter {
     */
     private void reachedPosition() {
         setMovingFlag();                    //Stops things from moving
-        currentBackgroundTexture.dispose(); //Gets rid of background
-        newBackgroundTexture.dispose();     //Gets rid of the newBackground
         //Sets background to that of the newBackGround
-        currentBackgroundTexture = new Texture(Gdx.files.internal(paths[destinationFlag]));
+        currentBackgroundTexture = screenAtlas.findRegion(paths[destinationFlag]);
         currentScreenPositionFlag = destinationFlag; //Changes the currentPosition to that of the destination
         currentX = 0;   //Places the background at x = 0
     }
@@ -569,6 +582,7 @@ class StartScreen extends ScreenAdapter {
         if(movingFlag){
             updateScreenPosition();
             updateButtonPosition();
+            updateTextPosition();
         }
         if(doorFlag != 0){
             updateDoorPosition();
@@ -610,6 +624,17 @@ class StartScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
+    Purpose: Updates the x position of all of the buttons that are displayed horizontally
+    */
+    private void updateTextPosition(){
+        if(directionFlag) { textMove += RATE_OF_CHANGE; }
+        else { textMove -= RATE_OF_CHANGE; }
+    }
+
+
+    /*
+    Input: Void
+    Output: Void
     Purpose: Updates the y position of the doors based on which doorFlag we're in
     */
     private void updateDoorPosition(){
@@ -635,7 +660,7 @@ class StartScreen extends ScreenAdapter {
             else if(locationFlag == 1) {setUpShipyard();}
             //else if (locationFlag == 2) {setUpSettings();}
         }
-        else if(doorFlag == 2 && doorDownY == WORLD_HEIGHT || doorDownY == 0 - doorDownTexture.getHeight()){ setStopDoor(); }
+        else if(doorFlag == 2 && doorDownY == WORLD_HEIGHT || doorDownY == 0 - doorDownTexture.getRegionHeight()){ setStopDoor(); }
     }
 
     /*
@@ -655,10 +680,18 @@ class StartScreen extends ScreenAdapter {
         if(movingFlag) {drawMovingBackground();}
         if(doorFlag != 0){drawDoors();}
         batch.end();
-        //Draws horizontal buttons not part of batch
-        if(doorFlag == 0 && locationFlag == 0) {mainStage.draw();}
-        else if(doorFlag == 0 && locationFlag == 1){shipyardStage.draw();}
 
+        //Draws horizontal buttons not part of batch
+        if(doorFlag == 0 && locationFlag == 0) {
+            mainStage.draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            batch.begin();
+            drawText();
+            batch.end();
+        }
+        else if(doorFlag == 0 && locationFlag == 1){shipyardStage.draw();}
     }
 
 
@@ -703,23 +736,59 @@ class StartScreen extends ScreenAdapter {
     /*
     Input: Void
     Output: Void
+    Purpose: Draws the text that shows the score
+    */
+    private void drawText(){
+        bitmapFont.getData().setScale(0.4f, 0.5f);
+        drawMainText();
+        drawAdventureText();
+        drawEndlessText();
+    }
+
+    private void drawMainText(){
+        String[] textArray = new String[] {"Adventure", "Endless", "Shipyard", "Options"};
+        float newHeight;
+        for(int i = 0; i < textArray.length; i++){
+            newHeight = (float) 200.0 - i * shipyardButton.getHeight() - i * BUTTON_SPACING_GAP;
+            setUpText(textArray[i], viewport.getWorldWidth()/2 - 5* shipyardButton.getWidth()/12 + textMove,
+                    newHeight + glyphLayout.height/2);
+        }
+    }
+
+    private void drawAdventureText(){
+        String[] textArray = new String[] {"Moon Orbit", "Wormhole", "Space Warehouse", "Galactic War", "Crash Landing"};
+        float newHeight;
+        for(int i = 0; i < textArray.length; i++){
+            newHeight = (float) 200.0 - i * adventureLevelOneButton.getHeight() - i * BUTTON_SPACING_GAP;
+            setUpText(textArray[i], viewport.getWorldWidth()/2 - 5 * adventureLevelOneButton.getWidth()/12 + textMove - 320,
+                    newHeight + glyphLayout.height/2);
+        }
+    }
+
+    private void drawEndlessText(){
+        String[] textArray = new String[] {"Space Hops", "Moon Orbit", "Wormhole", "Space Warehouse", "Galactic War", "Crash Landing"};
+        float newHeight;
+        for(int i = 0; i < textArray.length; i++){
+            newHeight = (float) 200.0 - i * adventureLevelOneButton.getHeight() - i * BUTTON_SPACING_GAP;
+            setUpText(textArray[i], viewport.getWorldWidth()/2 - 5 * adventureLevelOneButton.getWidth()/12 + textMove + 320,
+                    newHeight + glyphLayout.height/2);
+        }
+    }
+
+    private void setUpText(String string, float x, float y){
+        glyphLayout.setText(bitmapFont, string);
+        bitmapFont.draw(batch, string, x, y);
+    }
+
+    /*
+    Input: Void
+    Output: Void
     Purpose: Destroys everything once we move onto the new screen
     */
     @Override
     public void dispose() {
         mainStage.dispose();
         shipyardStage.dispose();
-        currentBackgroundTexture.dispose();
-        newBackgroundTexture.dispose();
-        mainScreenUpTexture.dispose();
-        mainScreenDownTexture.dispose();
-        sideScreenUpTexture.dispose();
-        sideScreenDownTexture.dispose();
-        sidScreenUnavailableTenure.dispose();
-        backButtonUnpressedTexture.dispose();
-        backButtonPressedTexture.dispose();
-        doorUpTexture.dispose();
-        doorDownTexture.dispose();
     }
 
 }
