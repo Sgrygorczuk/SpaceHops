@@ -13,50 +13,17 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
 class ProgressBar {
-    //Dimensions and position
-    private float outerRectangleWidth;
-    private float outerRectangleHeight;
-    private float innerRectangleWidth;
-    private float outerX;
-    private float outerY;
-    private float innerX;
-    private float innerY;
-
     //User display variables
     private float score = 0;
     private float goal;
 
-    //Rectangle object
-    private final Rectangle outerRectangle;
-    private final Rectangle innerRectangle;
-
     //Textures
-    private final TextureRegion outerTexture;
-    private final TextureRegion innerTexture;
+    private final TextureRegion textureRegion;
 
-    /*
-    Input: Screen dimensions, textures for the frame and progress bar
-    Output: Void
-    Purpose: Initializes the size and location of the progress bar based on the dimensions of the screen
-    */
-    ProgressBar(float screenWidth, float screenHeight, TextureRegion outerTexture, TextureRegion innerTexture){
-        //Calculate width adn height of frame and progress bar
-        outerRectangleWidth = 3*screenWidth/4;
-        outerRectangleHeight = screenHeight/10;
-        innerRectangleWidth = outerRectangleWidth - 20;
-        float innerRectangleHeight = outerRectangleHeight - 20;
-        //Calculate the position
-        outerX = (screenWidth - outerRectangleWidth)/2;
-        outerY = 20;
-        innerX = outerX + 10;
-        innerY = outerY + 10;
-        //Attach the textures
-        this.outerTexture = outerTexture;
-        this.innerTexture = innerTexture;
-        //Create the rectangle objects
-        this.outerRectangle = new Rectangle(outerX, outerY, outerRectangleWidth, outerRectangleHeight);
-        this.innerRectangle = new Rectangle(innerX, innerY, 0, innerRectangleHeight);
+    ProgressBar(TextureRegion textureRegion){
+        this.textureRegion = textureRegion;
     }
+
 
     /*
     Input: The dev set goal
@@ -70,19 +37,7 @@ class ProgressBar {
     Output: Void
     Purpose: Increase the score and updates progress bar size
     */
-    void update(){
-        if(!goalReachedFlag()) {score++;}
-        updateInnerWidth();
-    }
-
-    /*
-    Input: Void
-    Output: Void
-    Purpose: Calculates the dimensions of the image -- MAY CHANGE --
-    */
-    private void updateInnerWidth(){
-        innerRectangle.width = (score/goal) * innerRectangleWidth;
-    }
+    void update(){ if(!goalReachedFlag()) {score++;} }
 
     /*
     Input: Void
@@ -105,7 +60,6 @@ class ProgressBar {
     */
     void restart(){
         score = 0;
-        updateInnerWidth();
     }
 
     /*
@@ -124,8 +78,7 @@ class ProgressBar {
     Purpose: Draws the progress bar, frame
     */
     private void drawFrame(SpriteBatch batch){
-        batch.draw(outerTexture, outerX, outerY, outerRectangle.width, outerRectangle.height);
-        batch.draw(innerTexture, innerX, innerY, innerRectangle.width, innerRectangle.height);
+        batch.draw(textureRegion, 0, 0, textureRegion.getRegionWidth(), textureRegion.getRegionHeight());
     }
 
     /*
@@ -136,7 +89,8 @@ class ProgressBar {
     private void drawScore(SpriteBatch batch, GlyphLayout glyphLayout, BitmapFont bitmapFont){
         String scoreAsString = (int) score + "/" + (int) goal;
         glyphLayout.setText(bitmapFont, scoreAsString);
-        bitmapFont.draw(batch, scoreAsString,outerRectangleWidth+glyphLayout.width,outerRectangleHeight+glyphLayout.height);
+        bitmapFont.draw(batch, scoreAsString, (float) textureRegion.getRegionWidth()/2 - glyphLayout.width/2,
+                 (float) textureRegion.getRegionHeight()/2 + 4);
     }
 
     /*
@@ -145,7 +99,6 @@ class ProgressBar {
     Purpose: Draws the wireframe
     */
     void drawDebug(ShapeRenderer shapeRenderer) {
-        shapeRenderer.rect(outerRectangle.x, outerRectangle.y, outerRectangle.width, outerRectangle.height);
-        shapeRenderer.rect(innerRectangle.x, innerRectangle.y, innerRectangle.width, innerRectangle.height);
+        shapeRenderer.rect(textureRegion.getRegionX(), textureRegion.getRegionY(), textureRegion.getRegionWidth(), textureRegion.getRegionHeight());
     }
 }

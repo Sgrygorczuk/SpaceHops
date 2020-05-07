@@ -1,40 +1,33 @@
 
 level_one_assets.png
-size: 1024,1024
+size: 512,512
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
 Earth
   rotate: false
-  xy: 2, 2
+  xy: 2, 147
   size: 300, 300
   orig: 300, 300
   offset: 0, 0
   index: -1
 Moon
   rotate: false
-  xy: 304, 222
+  xy: 2, 65
   size: 80, 80
   orig: 80, 80
   offset: 0, 0
   index: -1
-Space
-  rotate: false
-  xy: 2, 304
-  size: 480, 640
-  orig: 480, 640
-  offset: 0, 0
-  index: -1
 TowerDown
   rotate: false
-  xy: 484, 499
+  xy: 304, 2
   size: 64, 445
   orig: 64, 445
   offset: 0, 0
   index: -1
 TowerUp
   rotate: false
-  xy: 550, 499
+  xy: 370, 2
   size: 64, 445
   orig: 64, 445
   offset: 0, 0

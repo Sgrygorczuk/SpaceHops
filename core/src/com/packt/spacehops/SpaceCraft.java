@@ -4,7 +4,6 @@ The SpaceCraft class holds all of the information about the spaceships position 
 
 package com.packt.spacehops;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -76,6 +75,8 @@ class SpaceCraft {
     */
     float getRadius(){ return COLLISION_RADIUS; }
 
+    float getSpeed(){return ySpeed;}
+
     /*
     Input: Void
     Output: Void
@@ -104,6 +105,11 @@ class SpaceCraft {
     */
     void flyUp(){
         ySpeed = FLY_ACCELERATION;
+        updatePosition(x, y + ySpeed);
+    }
+
+    void flyDown(){
+        ySpeed = -FLY_ACCELERATION;
         updatePosition(x, y + ySpeed);
     }
 

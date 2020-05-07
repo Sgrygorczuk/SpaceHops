@@ -4,44 +4,86 @@ size: 1024,1024
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
+ButtonSymbols
+  rotate: false
+  xy: 2, 2
+  size: 136, 34
+  orig: 136, 34
+  offset: 0, 0
+  index: -1
 DoorDown
   rotate: false
-  xy: 646, 724
+  xy: 646, 760
   size: 320, 240
   orig: 320, 240
   offset: 0, 0
   index: -1
 DoorUp
   rotate: false
-  xy: 646, 482
+  xy: 646, 518
   size: 320, 240
   orig: 320, 240
   offset: 0, 0
   index: -1
-LeftScreen
+GreenLight
   rotate: false
-  xy: 2, 484
+  xy: 968, 979
+  size: 21, 21
+  orig: 21, 21
+  offset: 0, 0
+  index: -1
+LeftArrowPressed
+  rotate: false
+  xy: 646, 461
+  size: 70, 55
+  orig: 70, 55
+  offset: 0, 0
+  index: -1
+LeftArrowUnpressed
+  rotate: false
+  xy: 646, 404
+  size: 70, 55
+  orig: 70, 55
+  offset: 0, 0
+  index: -1
+RightArrowPressed
+  rotate: false
+  xy: 718, 461
+  size: 70, 55
+  orig: 70, 55
+  offset: 0, 0
+  index: -1
+RightArrowUnpressed
+  rotate: false
+  xy: 646, 347
+  size: 70, 55
+  orig: 70, 55
+  offset: 0, 0
+  index: -1
+Screen_Center
+  rotate: false
+  xy: 2, 520
   size: 320, 480
   orig: 320, 480
   offset: 0, 0
   index: -1
-MainScreen
+Screen_Left
   rotate: false
-  xy: 2, 2
+  xy: 2, 38
   size: 320, 480
   orig: 320, 480
   offset: 0, 0
   index: -1
-RightScreen
+Screen_Right
   rotate: false
-  xy: 324, 484
+  xy: 324, 520
   size: 320, 480
   orig: 320, 480
   offset: 0, 0
   index: -1
 Shipyard
   rotate: false
-  xy: 324, 2
+  xy: 324, 38
   size: 320, 480
   orig: 320, 480
   offset: 0, 0

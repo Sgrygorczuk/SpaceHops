@@ -14,7 +14,6 @@ while in an active game environment.
 
 package com.packt.spacehops;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
@@ -22,7 +21,6 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -93,7 +91,7 @@ class AdventureLevelOne extends ScreenAdapter {
     private PauseMenu pauseMenu;            //Pause Menu deals with buttons
 
     //Static variables
-    private static final int ASTEROIDS_PASSED = 1;              //Amount of asteroids that need to be passed to move to next part
+    private static final int ASTEROIDS_PASSED = 5;              //Amount of asteroids that need to be passed to move to next part
     private static final int GOAL = 10;                         //Goal of the level to end
     private static final float GAP_BETWEEN_ASTEROID = 200;      //Distance between objects
 
@@ -109,6 +107,8 @@ class AdventureLevelOne extends ScreenAdapter {
      */
     private BitmapFont bitmapFont;
     private GlyphLayout glyphLayout;
+    private BitmapFont menuBitmapFont;
+    private GlyphLayout menuGlyphLayout;
 
     /*
     Flags
@@ -151,6 +151,8 @@ class AdventureLevelOne extends ScreenAdapter {
         //BitmapFont and GlyphLayout
         bitmapFont = new BitmapFont();
         glyphLayout = new GlyphLayout();
+        menuBitmapFont = new BitmapFont();
+        menuGlyphLayout = new GlyphLayout();
     }
 
     /*
@@ -172,7 +174,7 @@ class AdventureLevelOne extends ScreenAdapter {
         pauseMenu.createNextLevelButton(1);
 
         //Player UI
-        progressBar = new ProgressBar(WORLD_WIDTH,WORLD_HEIGHT,progressBarFrameTexture,progressBarTexture);
+        progressBar = new ProgressBar(progressBarTexture);
         progressBar.setGoal(GOAL);
         conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
     }
@@ -215,8 +217,7 @@ class AdventureLevelOne extends ScreenAdapter {
         collectibleTexture = uiAtlas.findRegion("CollectiblePack");
 
         //Progress Bar
-        progressBarTexture = uiAtlas.findRegion("Progress");
-        progressBarFrameTexture = uiAtlas.findRegion("ProgressBar");
+        progressBarTexture = uiAtlas.findRegion("Score");
 
         //Communication Frame
         communicationFrameTexture = uiAtlas.findRegion("CommunicationFrame");
@@ -342,7 +343,7 @@ class AdventureLevelOne extends ScreenAdapter {
     Purpose: Creates a new asteroid row and adds it to the array
     */
     private void createNewAsteroid(){
-        Asteroids newAsteroid = new Asteroids(topAsteroidTexture, bottomAsteroidTexture);
+        Asteroids newAsteroid = new Asteroids(topAsteroidTexture, bottomAsteroidTexture, true);
         newAsteroid.setPosition(WORLD_WIDTH + newAsteroid.getRadius());
         asteroids.add(newAsteroid);
     }
@@ -476,23 +477,33 @@ class AdventureLevelOne extends ScreenAdapter {
         if(part == PART.PartOne && asteroidsPassed == ASTEROIDS_PASSED){
             part = PART.PartTwo;
             screenOnFlag = true;
+            conversationBox.restartTimer();
         }
         //Moves from Part 2 to Part 3, turns on commutation window
         if(part == PART.PartTwo && progressBar.getScore() == 1){
             part = PART.PartThree;
             screenOnFlag = true;
+            conversationBox.restartTimer();
         }
         //Moves from Part 3 to Part 4, turns on commutation window
         if(part == PART.PartThree && progressBar.getScore() == GOAL-1){
             stopSpawningFlag = true;
             part = PART.PartFour;
             screenOnFlag = true;
+            conversationBox.restartTimer();
+            Asteroids newAsteroid = new Asteroids(topAsteroidTexture, bottomAsteroidTexture, false);
+            newAsteroid.setPosition(3*WORLD_WIDTH/2 + newAsteroid.getRadius());
+            asteroids.add(newAsteroid);
         }
         if(part == PART.PartFour && progressBar.getScore() == GOAL){
             part = PART.PartFive;
+            conversationBox.restartTimer();
         }
         if(part == PART.PartFive){
             endLevelFlag = true;
+            conversationBox.restartTimer();
+            //Sets level to be completed
+            spaceHops.getSettings().setLevelCompletion(0);
             Gdx.input.setInputProcessor(pauseMenu.getNextLevelStage());
 
         }
@@ -500,7 +511,7 @@ class AdventureLevelOne extends ScreenAdapter {
         //Tells the screen to turn on and which text output to give
         if(part.equals(PART.PartOne) && screenOnFlag){ conversationBox.update(delta, 0);}
         if(part.equals(PART.PartOne) && !screenOnFlag) {conversationBox.update(delta, 1);}
-        if(part.equals(PART.PartTwo) && screenOnFlag && collectibles.first().getX() < WORLD_WIDTH && !collectibles.first().getCollidingFlag()){ conversationBox.update(delta, 0);}
+        if(part.equals(PART.PartTwo) && screenOnFlag && collectibles.first().getX() < WORLD_WIDTH && collectibles.first().getCollidingFlag()){ conversationBox.update(delta, 0);}
         if(part.equals(PART.PartTwo) && !screenOnFlag) {conversationBox.update(delta, 1);}
         if(part.equals(PART.PartThree) && screenOnFlag){ conversationBox.update(delta,0);}
         if(part.equals(PART.PartThree) && !screenOnFlag) {conversationBox.update(delta, 1);}
@@ -594,7 +605,7 @@ class AdventureLevelOne extends ScreenAdapter {
     */
     private void updateCollectibleScore(){
         Collectible collectible = collectibles.first();
-        if (collectible.isColliding(spaceCraft) && !collectible.getCollidingFlag()) {
+        if (collectible.isColliding(spaceCraft) && collectible.getCollidingFlag()) {
             progressBar.update();
             collectible.setCollidingFlag();
         }
@@ -641,16 +652,14 @@ class AdventureLevelOne extends ScreenAdapter {
         drawCollectible();                  //Draws all collectibles
         spaceCraft.draw(batch);             //Draws user
         conversationBox.draw(batch);        //Draws conversation box
+        drawText();
         //While not in part one draws the progress bar
         if(part != PART.PartOne) {progressBar.draw(batch, glyphLayout, bitmapFont);}
         //Draws menu if paused or level has ended
         if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         batch.end();
 
-        //Buttons are not part of the batch
-        if(!pauseMenu.getPauseFlag() && !endLevelFlag){pauseMenu.getMenuButtonStage().draw();}
-        else {pauseMenu.getPauseMenuScreen().draw();}
-        if(endLevelFlag) {pauseMenu.getNextLevelStage().draw();}
+        drawMenus();
     }
 
     /*
@@ -667,6 +676,34 @@ class AdventureLevelOne extends ScreenAdapter {
     */
     private void drawCollectible(){ for(Collectible collectible : collectibles){ collectible.draw(batch); } }
 
+    private void drawText(){
+        if(part.equals(PART.PartOne) && conversationBox.getProfileFlag()) {
+            setUpText("We've found an unusual",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30);
+            setUpText("signal in the asteroid ",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30 - glyphLayout.height - 3);
+            setUpText("belt, investigate it!",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30 - 2 * glyphLayout.height - 6);
+        }
+        if(part.equals(PART.PartTwo) && conversationBox.getProfileFlag()) {
+            setUpText("What a strange rock...",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30);
+        }
+        if(part.equals(PART.PartThree) && conversationBox.getProfileFlag()) {
+            setUpText("Seems like it's the",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30);
+            setUpText("source of the signal,",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30 - glyphLayout.height - 3);
+            setUpText("collect few more samples.",
+                    WORLD_WIDTH / 4 + 15, WORLD_HEIGHT - 30 - 2 * glyphLayout.height - 6);
+        }
+    }
+
+    private void setUpText(String string, float x, float y){
+        glyphLayout.setText(bitmapFont, string);
+        bitmapFont.draw(batch, string, x, y);
+    }
+
     /*
     Input: Void
     Output: Void
@@ -677,6 +714,40 @@ class AdventureLevelOne extends ScreenAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);										 //Sends it to the buffer
     }
 
+    private void drawMenus(){
+        //Buttons are not part of the batch
+        if(!pauseMenu.getPauseFlag() && !endLevelFlag){
+            pauseMenu.getMenuButtonStage().draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            //Batch setting up texture
+            batch.begin();
+            pauseMenu.drawMenuText(menuGlyphLayout, menuBitmapFont, batch);
+            batch.end();
+        }
+        else {
+            pauseMenu.getPauseMenuScreen().draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            //Batch setting up texture
+            batch.begin();
+            pauseMenu.drawPauseText(menuGlyphLayout, menuBitmapFont, batch);
+            batch.end();
+        }
+        if(endLevelFlag) {
+            pauseMenu.getNextLevelStage().draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            //Batch setting up texture
+            batch.begin();
+            pauseMenu.drawNextLevelText(menuGlyphLayout, menuBitmapFont, batch);
+            batch.end();
+        }
+    }
+
     /*
     Input: Void
     Output: Void
@@ -685,5 +756,9 @@ class AdventureLevelOne extends ScreenAdapter {
     @Override
     public void dispose() {
         pauseMenu.dispose();
+        spaceHops.getAssetManager().unload("level_one_assets.atlas");
+        spaceHops.getAssetManager().unload("ship_assets.atlas");
+        spaceHops.getAssetManager().unload("profile_assets.atlas");
+
     }
 }

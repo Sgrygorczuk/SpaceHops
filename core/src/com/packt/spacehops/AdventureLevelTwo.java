@@ -94,6 +94,8 @@ class AdventureLevelTwo extends ScreenAdapter {
     //Background objects we use
     private PauseMenu pauseMenu;
     private ProgressBar progressBar;        //Progress Bar that show user's progress
+    private BitmapFont menuBitmapFont;
+    private GlyphLayout menuGlyphLayout;
 
     //Timing variables
     private static final float MOVE_TIME = 10F;                 //Time that the conversation box stays on screen
@@ -108,7 +110,7 @@ class AdventureLevelTwo extends ScreenAdapter {
     /*
     Flags
      */
-    private static final int GOAL = 10;          //Goal of the level to end
+    private static final int GOAL = 6;          //Goal of the level to end
     private boolean debugFlag = false;          //Tells screen to draw debug wireframe
     private boolean textureFlag = true;         //Tells screen to draw textures
     private boolean stopSpawningFlag = false;   //Tells screen to stop creating more asteroids and collectibles
@@ -150,6 +152,8 @@ class AdventureLevelTwo extends ScreenAdapter {
         //BitmapFont and GlyphLayout
         bitmapFont = new BitmapFont();
         glyphLayout = new GlyphLayout();
+        menuBitmapFont = new BitmapFont();
+        menuGlyphLayout = new GlyphLayout();
     }
 
     /*
@@ -168,12 +172,13 @@ class AdventureLevelTwo extends ScreenAdapter {
 
         //Player UI
             //Progress of stage
-        progressBar = new ProgressBar(WORLD_WIDTH,WORLD_HEIGHT,progressBarFrameTexture,progressBarTexture);
+        progressBar = new ProgressBar(progressBarTexture);
         progressBar.setGoal(GOAL);
             //Talk from NPC
         conversationBox = new ConversationBox(WORLD_WIDTH, WORLD_HEIGHT, communicationFrameTexture, profileTexture);
             //Menus
         pauseMenu = new PauseMenu(spaceHops);
+        pauseMenu.createNextLevelButton(2);
 
     }
 
@@ -225,8 +230,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         profileTexture = profileAtlas.findRegion("RussianPack");
 
         //Progress Bar
-        progressBarTexture = uiAtlas.findRegion("Progress");
-        progressBarFrameTexture = uiAtlas.findRegion("ProgressBar");
+        progressBarTexture = uiAtlas.findRegion("Score");
     }
 
     /*
@@ -399,19 +403,19 @@ class AdventureLevelTwo extends ScreenAdapter {
             dragon.setStart();
         }
         //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to bite enemy
-        if(part == PART.PartTwo && progressBar.getScore() == 3){
+        if(part == PART.PartTwo && progressBar.getScore() == 2){
             part = PART.PartThree;
             dragon.setPhase(1);
             screenOnFlag = true;
         }
         //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to shoot fire and bite
-        if(part == PART.PartThree && progressBar.getScore() == 6){
+        if(part == PART.PartThree && progressBar.getScore() == 4){
             part = PART.PartFour;
             dragon.setPhase(2);
             screenOnFlag = true;
         }
         //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to shoot fire and laser and bite
-        if(part == PART.PartFour && progressBar.getScore() == 9){
+        if(part == PART.PartFour && progressBar.getScore() == 6){
             part = PART.PartFive;
             screenOnFlag = true;
         }
@@ -528,6 +532,7 @@ class AdventureLevelTwo extends ScreenAdapter {
                 //If score is done end game
                 if(progressBar.getScore() == GOAL){
                     Gdx.input.setInputProcessor(pauseMenu.getNextLevelStage());
+                    spaceHops.getSettings().getLevelCompletion()[1] = true;
                     endLevelFlag = true;}
             }
         }
@@ -706,13 +711,7 @@ class AdventureLevelTwo extends ScreenAdapter {
         if(pauseMenu.getPauseFlag() || endLevelFlag){pauseMenu.draw(batch);}
         batch.end();
 
-        //Buttons are not part of the batch
-        //Draw the start pause button
-        if(!pauseMenu.getPauseFlag() && !endLevelFlag){pauseMenu.getMenuButtonStage().draw();}
-        //Draws pause menu
-        else {pauseMenu.getPauseMenuScreen().draw();}
-        //Shows the exit level menu
-        if(endLevelFlag) {pauseMenu.getNextLevelStage().draw();}
+        drawMenus();
     }
 
     /*
@@ -723,6 +722,40 @@ class AdventureLevelTwo extends ScreenAdapter {
     private void clearScreen() {
         Gdx.gl.glClearColor(Color.BLACK.r, Color.BLACK.g, Color.BLACK.b, Color.BLACK.a); //Sets color to black
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);										 //Sends it to the buffer
+    }
+
+    private void drawMenus(){
+        //Buttons are not part of the batch
+        if(!pauseMenu.getPauseFlag() && !endLevelFlag){
+            pauseMenu.getMenuButtonStage().draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            //Batch setting up texture
+            batch.begin();
+            pauseMenu.drawMenuText(menuGlyphLayout, menuBitmapFont, batch);
+            batch.end();
+        }
+        else {
+            pauseMenu.getPauseMenuScreen().draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            //Batch setting up texture
+            batch.begin();
+            pauseMenu.drawPauseText(glyphLayout, bitmapFont, batch);
+            batch.end();
+        }
+        if(endLevelFlag) {
+            pauseMenu.getNextLevelStage().draw();
+
+            batch.setProjectionMatrix(camera.projection);
+            batch.setTransformMatrix(camera.view);
+            //Batch setting up texture
+            batch.begin();
+            pauseMenu.drawNextLevelText(glyphLayout, bitmapFont, batch);
+            batch.end();
+        }
     }
 
     /*

@@ -98,6 +98,8 @@ class ConversationBox {
         if(screenUp == 1) {updateEndScreen();}
     }
 
+    void restartTimer(){ animationTime = 0; }
+
     /*
     Input: Void
     Output: Void
@@ -230,6 +232,8 @@ class ConversationBox {
     Purpose: To keep the height open enough so we can see the width decreasing before fully closing frame
     */
     private boolean heightAlmostEmpty(){return outerRectangle.height <= changeRateHeight;}
+
+    boolean getProfileFlag(){return  profileFlag;}
 
     /*
     Input: Batch, object that draws the textures

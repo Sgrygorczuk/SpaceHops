@@ -40,10 +40,17 @@ class StartScreen extends ScreenAdapter {
     private TextureRegion mainScreenDownTexture;
     private TextureRegion sideScreenUpTexture;
     private TextureRegion sideScreenDownTexture;
-    private TextureRegion backButtonUnpressedTexture;
-    private TextureRegion backButtonPressedTexture;
+    private TextureRegion backLeftButtonUnpressedTexture;
+    private TextureRegion backLeftButtonPressedTexture;
+    private TextureRegion backRightButtonUnpressedTexture;
+    private TextureRegion backRightButtonPressedTexture;
     private TextureRegion doorUpTexture;
     private TextureRegion doorDownTexture;
+    private TextureRegion greenLightTexture;
+    private TextureRegion adventureIconTexture;
+    private TextureRegion endlessIconTexture;
+    private TextureRegion shipyardIconTexture;
+    private TextureRegion settingsIconTexture;
 
     //Stage and the buttons it holds
     private Stage mainStage;
@@ -132,6 +139,7 @@ class StartScreen extends ScreenAdapter {
         showRightButton();  //Creates the right screen buttons and their functionality
         showShipyardButtons();
         showInitialize();   //Initializes extra variables
+        showVisibility();
 
         //BitmapFont and GlyphLayout
         bitmapFont = new BitmapFont();
@@ -149,21 +157,31 @@ class StartScreen extends ScreenAdapter {
         buttonAtlas = spaceHops.getAssetManager().get("ui_assets.atlas");
 
         //Background texture
-        currentBackgroundTexture = screenAtlas.findRegion("MainScreen");
+        currentBackgroundTexture = screenAtlas.findRegion("Screen_Center");
 
         //Central Screen Textures
-        mainScreenUpTexture = buttonAtlas.findRegion("ButtonUnpressed");
-        mainScreenDownTexture = buttonAtlas.findRegion("ButtonPressed");
+        mainScreenUpTexture = buttonAtlas.findRegion("BigButtonUnpressed");
+        mainScreenDownTexture = buttonAtlas.findRegion("BigButtonPressed");
 
         //Side Screen Textures
-        sideScreenUpTexture = buttonAtlas.findRegion("LevelButtonUnpressed");
-        sideScreenDownTexture = buttonAtlas.findRegion("LevelButtonPressed");
-        backButtonUnpressedTexture = buttonAtlas.findRegion("BackButtonUnpressed");
-        backButtonPressedTexture = buttonAtlas.findRegion("BackButtonPressed");
+        sideScreenUpTexture = buttonAtlas.findRegion("SmallButtonUnpressed");
+        sideScreenDownTexture = buttonAtlas.findRegion("SmallButtonPressed");
+        backLeftButtonUnpressedTexture = screenAtlas.findRegion("LeftArrowUnpressed");
+        backLeftButtonPressedTexture = screenAtlas.findRegion("LeftArrowPressed");
+        backRightButtonUnpressedTexture = screenAtlas.findRegion("RightArrowUnpressed");
+        backRightButtonPressedTexture = screenAtlas.findRegion("RightArrowPressed");
+
+        greenLightTexture = screenAtlas.findRegion("GreenLight");
 
         //
         doorUpTexture = screenAtlas.findRegion("DoorUp");
         doorDownTexture = screenAtlas.findRegion("DoorDown");
+
+        TextureRegion[][] icons = new TextureRegion(screenAtlas.findRegion("ButtonSymbols")).split(34, 34);
+        adventureIconTexture = icons[0][0];
+        endlessIconTexture = icons[0][1];
+        shipyardIconTexture = icons[0][2];
+        settingsIconTexture = icons[0][3];
     }
 
     /*
@@ -192,7 +210,7 @@ class StartScreen extends ScreenAdapter {
         ImageButton[] buttons = {adventureButton, endlessButton, shipyardButton, settingsButton};
 
         //Creates the buttons at equal distance in a row with same background images
-        ImageButton[] newButtons = setUpButtons(buttons, WORLD_WIDTH/2, mainScreenUpTexture, mainScreenDownTexture);
+        ImageButton[] newButtons = setUpButtons(buttons, WORLD_WIDTH/2, 222, mainScreenUpTexture, mainScreenDownTexture);
 
         //Realizes the buttons because the copies inside the for loop are local and other wise the
         //global ones stay null
@@ -253,9 +271,9 @@ class StartScreen extends ScreenAdapter {
          */
 
         //Creates the back button that moves us to the central screen
-        leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUnpressedTexture)),
-                new TextureRegionDrawable(backButtonPressedTexture));
-        leftBackButton.setPosition(-1*WORLD_WIDTH/8, WORLD_HEIGHT/4, Align.center);
+        leftBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backRightButtonUnpressedTexture)),
+                new TextureRegionDrawable(backRightButtonPressedTexture));
+        leftBackButton.setPosition(-1*WORLD_WIDTH/8 + 3, WORLD_HEIGHT/12, Align.center);
         mainStage.addActor(leftBackButton);
 
         //Sets up array for button initialization in bulk
@@ -263,7 +281,7 @@ class StartScreen extends ScreenAdapter {
                 adventureLevelFourButton, adventureLevelFiveButton};
 
         //Set up the buttons
-        ImageButton[] newButtons = setUpButtons(buttons, -WORLD_WIDTH/2, sideScreenUpTexture, sideScreenDownTexture);
+        ImageButton[] newButtons = setUpButtons(buttons, -WORLD_WIDTH/2 - 4, 213, sideScreenUpTexture, sideScreenDownTexture);
 
         //Reinitialize them because the ones in the array aren't global
         //And adds them to stage so that we can dispose of them when leaving screen
@@ -307,7 +325,17 @@ class StartScreen extends ScreenAdapter {
             @Override
             public void tap(InputEvent event, float x, float y, int count, int button) {
                 super.tap(event, x, y, count, button);
-                spaceHops.setScreen(new AdventureLevelTwo(spaceHops));
+                spaceHops.setScreen(new LoadingScreen(spaceHops ,2));
+                dispose();
+            }
+        });
+
+        //Turns on level one
+        adventureLevelThreeButton.addListener(new ActorGestureListener() {
+            @Override
+            public void tap(InputEvent event, float x, float y, int count, int button) {
+                super.tap(event, x, y, count, button);
+                spaceHops.setScreen(new LoadingScreen(spaceHops, 3));
                 dispose();
             }
         });
@@ -325,9 +353,9 @@ class StartScreen extends ScreenAdapter {
          */
 
         //Sets up the button that takes us back to the central screen
-        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUnpressedTexture)),
-                new TextureRegionDrawable(backButtonPressedTexture));
-        rightBackButton.setPosition(9*WORLD_WIDTH/8, WORLD_HEIGHT/4, Align.center);
+        rightBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backLeftButtonUnpressedTexture)),
+                new TextureRegionDrawable(backLeftButtonPressedTexture));
+        rightBackButton.setPosition(9*WORLD_WIDTH/8 - 3, WORLD_HEIGHT/12, Align.center);
         mainStage.addActor(rightBackButton);
 
         //Sets up array for bulk initialization of buttons
@@ -335,7 +363,7 @@ class StartScreen extends ScreenAdapter {
         endlessLevelFourButton, endlessLevelFiveButton, endlessLevelSixButton};
 
         //Initializes the button with position and texture
-        ImageButton[] newButtons = setUpButtons(buttons, 3*WORLD_WIDTH/2, sideScreenUpTexture, sideScreenDownTexture);
+        ImageButton[] newButtons = setUpButtons(buttons, 3*WORLD_WIDTH/2, 213, sideScreenUpTexture, sideScreenDownTexture);
 
         //Reinitialize the buttons because the ones in the array aren't global
         //And adds them to the stage so they can be disposed of after we leave this screen
@@ -378,8 +406,8 @@ class StartScreen extends ScreenAdapter {
          */
 
         //Sets up the button that takes us back to the central screen
-        ImageButton shipyardBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backButtonUnpressedTexture)),
-                new TextureRegionDrawable(backButtonPressedTexture));
+        ImageButton shipyardBackButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(backLeftButtonUnpressedTexture)),
+                new TextureRegionDrawable(backLeftButtonPressedTexture));
         shipyardBackButton.setPosition(WORLD_WIDTH/2, WORLD_HEIGHT/4, Align.center);
         shipyardStage.addActor(shipyardBackButton);
 
@@ -402,7 +430,7 @@ class StartScreen extends ScreenAdapter {
     */
     private void showInitialize(){
         //Keeps track of the images that the new background is going to be attached to
-        paths = new String[] {"LeftScreen", "MainScreen", "RightScreen"};
+        paths = new String[] {"Screen_Left", "Screen_Center", "Screen_Right"};
         //Keeps track of all of the buttons that exits with in the first three main screens
         buttonArray = new ImageButton[] {adventureButton, endlessButton, settingsButton, shipyardButton,
                 leftBackButton, rightBackButton, adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
@@ -422,16 +450,43 @@ class StartScreen extends ScreenAdapter {
     Output: Array of initialized buttons
     Purpose: Sets the buttons, adding in their textures and functionality
     */
-    private ImageButton[] setUpButtons(ImageButton[] buttons, float x, TextureRegion upTexture, TextureRegion downTexture){
+    private ImageButton[] setUpButtons(ImageButton[] buttons, float x, float y, TextureRegion upTexture, TextureRegion downTexture){
         for(int i = 0; i < buttons.length; i++){
             //Create the button
             buttons[i] =  new ImageButton(new TextureRegionDrawable(upTexture), new TextureRegionDrawable(downTexture));
             //Calculate the height of the new button
-            float newHeight = (float) 200.0 - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
+            float newHeight = y - i * buttons[i].getHeight() - i * BUTTON_SPACING_GAP;
             //Position the button
             buttons[i].setPosition(x, newHeight, Align.center);
         }
         return buttons;
+    }
+
+    private void showVisibility(){
+        ImageButton[] leftButtons = {adventureLevelOneButton, adventureLevelTwoButton, adventureLevelThreeButton,
+                adventureLevelFourButton, adventureLevelFiveButton};
+
+        ImageButton[] rightButtons = {endlessLevelOneButton, endlessLevelTwoButton, endlessLevelThreeButton,
+                endlessLevelFourButton, endlessLevelFiveButton, endlessLevelSixButton};
+
+        if(spaceHops.getSettings().getAllLevelsBeatFlag()){rightButtons[0].setVisible(true);}
+        else {rightButtons[0].setVisible(false);}
+
+        for(int i = 0; i < spaceHops.getSettings().getLevelCompletion().length ; i ++){
+            if(spaceHops.getSettings().getLevelCompletion()[i] && i < 4){
+                leftButtons[i+1].setVisible(true);
+            }
+            else if(i < 4){
+                leftButtons[i+1].setVisible(false);
+            }
+
+            if(spaceHops.getSettings().getLevelCompletion()[i]){
+                rightButtons[i+1].setVisible(true);
+            }
+            else{
+                rightButtons[i+1].setVisible(false);
+            }
+        }
     }
 
     /*
@@ -678,20 +733,25 @@ class StartScreen extends ScreenAdapter {
         drawBackground(); //Draws background
         //Draws newBackground if we're moving, otherwise newBackground doesn't exist
         if(movingFlag) {drawMovingBackground();}
-        if(doorFlag != 0){drawDoors();}
+        drawGreenLights();
         batch.end();
 
         //Draws horizontal buttons not part of batch
-        if(doorFlag == 0 && locationFlag == 0) {
+        if(doorFlag == 0 && locationFlag == 0 || doorFlag == 1 && locationFlag == 1 || doorFlag == 2 && locationFlag == 0) {
             mainStage.draw();
-
             batch.setProjectionMatrix(camera.projection);
             batch.setTransformMatrix(camera.view);
             batch.begin();
             drawText();
             batch.end();
         }
-        else if(doorFlag == 0 && locationFlag == 1){shipyardStage.draw();}
+        else if(doorFlag == 0 && locationFlag == 1 || doorFlag == 1 && locationFlag == 0 || doorFlag == 2 && locationFlag == 1) {shipyardStage.draw();}
+
+        batch.setProjectionMatrix(camera.projection);
+        batch.setTransformMatrix(camera.view);
+        batch.begin();
+        if(doorFlag != 0){drawDoors();}
+        batch.end();
     }
 
 
@@ -733,6 +793,19 @@ class StartScreen extends ScreenAdapter {
         batch.draw(doorDownTexture, 0, doorDownY);
     }
 
+    private void drawGreenLights() {
+        for (int i = 0; i < spaceHops.getSettings().getLevelCompletion().length; i++) {
+            if (spaceHops.getSettings().getLevelCompletion()[i]) {
+                drawGreenLight(202 - i * 31);
+            }
+        }
+    }
+
+    private void drawGreenLight(float y){
+        batch.draw(greenLightTexture, -269 + textMove, y);
+    }
+
+
     /*
     Input: Void
     Output: Void
@@ -747,32 +820,47 @@ class StartScreen extends ScreenAdapter {
 
     private void drawMainText(){
         String[] textArray = new String[] {"Adventure", "Endless", "Shipyard", "Options"};
+        TextureRegion[] iconArray = new TextureRegion[]{adventureIconTexture, endlessIconTexture, shipyardIconTexture, settingsIconTexture};
         float newHeight;
         for(int i = 0; i < textArray.length; i++){
-            newHeight = (float) 200.0 - i * shipyardButton.getHeight() - i * BUTTON_SPACING_GAP;
-            setUpText(textArray[i], viewport.getWorldWidth()/2 - 5* shipyardButton.getWidth()/12 + textMove,
+            //Draws the names of the buttons
+            newHeight = 223 - i * shipyardButton.getHeight() - i * BUTTON_SPACING_GAP;
+            setUpText(textArray[i], viewport.getWorldWidth()/2 - 30 + textMove,
                     newHeight + glyphLayout.height/2);
+            //Draws the icons on each button
+            batch.draw(iconArray[i], viewport.getWorldWidth()/2 - 73 + textMove, newHeight - 18);
         }
     }
 
+
     private void drawAdventureText(){
+        //Draws the title of the screen
+        setUpText("Adventure", -190 + textMove, 315);
         String[] textArray = new String[] {"Moon Orbit", "Wormhole", "Space Warehouse", "Galactic War", "Crash Landing"};
         float newHeight;
         for(int i = 0; i < textArray.length; i++){
-            newHeight = (float) 200.0 - i * adventureLevelOneButton.getHeight() - i * BUTTON_SPACING_GAP;
+            newHeight = 213 - i * adventureLevelOneButton.getHeight() - i * BUTTON_SPACING_GAP;
             setUpText(textArray[i], viewport.getWorldWidth()/2 - 5 * adventureLevelOneButton.getWidth()/12 + textMove - 320,
                     newHeight + glyphLayout.height/2);
         }
     }
 
     private void drawEndlessText(){
+        //Draws the title of the screen
+        setUpText("Endless", 450 + textMove, 310);
         String[] textArray = new String[] {"Space Hops", "Moon Orbit", "Wormhole", "Space Warehouse", "Galactic War", "Crash Landing"};
         float newHeight;
+
         for(int i = 0; i < textArray.length; i++){
-            newHeight = (float) 200.0 - i * adventureLevelOneButton.getHeight() - i * BUTTON_SPACING_GAP;
+            //Draws the name of each level
+            newHeight = 213 - i * adventureLevelOneButton.getHeight() - i * BUTTON_SPACING_GAP;
             setUpText(textArray[i], viewport.getWorldWidth()/2 - 5 * adventureLevelOneButton.getWidth()/12 + textMove + 320,
                     newHeight + glyphLayout.height/2);
+            //Draw high scores for each level
+            setUpText(String.valueOf(spaceHops.getSettings().getLevelHighScore()[i]), viewport.getWorldWidth()/2 + 100 + textMove + 320,
+                    newHeight + glyphLayout.height/2);
         }
+
     }
 
     private void setUpText(String string, float x, float y){
@@ -789,6 +877,7 @@ class StartScreen extends ScreenAdapter {
     public void dispose() {
         mainStage.dispose();
         shipyardStage.dispose();
+        spaceHops.getAssetManager().unload("main_screen_assets.atlas");
     }
 
 }

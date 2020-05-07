@@ -76,17 +76,22 @@ public class LoadingScreen extends ScreenAdapter{
 
     private void loadAssets(){
         //Loads all the images from the big image
-        spaceHops.getAssetManager().load("main_screen_assets.atlas", TextureAtlas.class);
         spaceHops.getAssetManager().load("ui_assets.atlas", TextureAtlas.class);
-        BitmapFontLoader.BitmapFontParameter bitmapFontParameter = new BitmapFontLoader.BitmapFontParameter();
-        bitmapFontParameter.atlasName = "font_assets.atlas";
-        //Adds font to manager
-        spaceHops.getAssetManager().load("Fonts/ButtonFont.fnt", BitmapFont.class, bitmapFontParameter);
-        spaceHops.getAssetManager().load("level_one_assets.atlas", TextureAtlas.class);
-        spaceHops.getAssetManager().load("level_two_assets.atlas", TextureAtlas.class);
-        spaceHops.getAssetManager().load("ship_assets.atlas", TextureAtlas.class);
-        spaceHops.getAssetManager().load("profile_assets.atlas", TextureAtlas.class);
-        spaceHops.getAssetManager().load("ui_assets.atlas", TextureAtlas.class);
+        if(levelSelectFlag == 0) {
+            spaceHops.getAssetManager().load("main_screen_assets.atlas", TextureAtlas.class);
+            BitmapFontLoader.BitmapFontParameter bitmapFontParameter = new BitmapFontLoader.BitmapFontParameter();
+            bitmapFontParameter.atlasName = "font_assets.atlas";
+            //Adds font to manager
+            spaceHops.getAssetManager().load("Fonts/ButtonFont.fnt", BitmapFont.class, bitmapFontParameter);
+            spaceHops.getAssetManager().load("ui_assets.atlas", TextureAtlas.class);
+        }
+        else if(levelSelectFlag > 0) {
+            spaceHops.getAssetManager().load("ship_assets.atlas", TextureAtlas.class);
+            spaceHops.getAssetManager().load("profile_assets.atlas", TextureAtlas.class);
+            if(levelSelectFlag == 1){spaceHops.getAssetManager().load("level_one_assets.atlas", TextureAtlas.class);}
+            else if(levelSelectFlag == 2){spaceHops.getAssetManager().load("level_two_assets.atlas", TextureAtlas.class);}
+            else if(levelSelectFlag == 3){spaceHops.getAssetManager().load("level_three_assets.atlas", TextureAtlas.class);}
+        }
     }
 
     /*
@@ -117,8 +122,10 @@ public class LoadingScreen extends ScreenAdapter{
     */
     private void update() {
         if (spaceHops.getAssetManager().update()) {
-            if(levelSelectFlag == 0){ spaceHops.setScreen(new StartScreen(spaceHops)); }
-            else if(levelSelectFlag == 1){ spaceHops.setScreen(new AdventureLevelOne(spaceHops)); }
+            if (levelSelectFlag == 0) { spaceHops.setScreen(new StartScreen(spaceHops)); }
+            else if (levelSelectFlag == 1) { spaceHops.setScreen(new AdventureLevelOne(spaceHops)); }
+            else if (levelSelectFlag == 2) { spaceHops.setScreen(new AdventureLevelTwo(spaceHops)); }
+            else if (levelSelectFlag == 3) { spaceHops.setScreen(new AdventureLevelThree(spaceHops)); }
         }
         else { progress = spaceHops.getAssetManager().getProgress(); }
     }

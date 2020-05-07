@@ -1,6 +1,8 @@
 package com.packt.spacehops;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -56,10 +58,10 @@ class PauseMenu {
         showMenuBackground();               //Sets up vars to display the background of the pause menu
     }
 
-    void setUp(){
+    private void setUp(){
         uiAtlas = spaceHops.getAssetManager().get("ui_assets.atlas");
-        nextLevelUpTexture = uiAtlas.findRegion("ButtonUnpressed");
-        nextLevelDownTexture = uiAtlas.findRegion("ButtonPressed");
+        nextLevelUpTexture = uiAtlas.findRegion("SmallButtonUnpressed");
+        nextLevelDownTexture = uiAtlas.findRegion("SmallButtonPressed");
     }
 
     /*
@@ -128,12 +130,13 @@ class PauseMenu {
         Gdx.input.setInputProcessor(menuButtonScreen);    //Give it the control
 
         //Sets up textures used by the button
-        TextureRegion menuUpTexture = uiAtlas.findRegion("MenuUnpressed");
-        TextureRegion menuDownTexture = uiAtlas.findRegion("MenuPressed");
+        TextureRegion menuUpTexture = uiAtlas.findRegion("BigButtonUnpressed");
+        TextureRegion menuDownTexture = uiAtlas.findRegion("BigButtonPressed");
 
         //Creates button and position
         ImageButton menuButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(menuUpTexture)), new TextureRegionDrawable(menuDownTexture));
-        menuButton.setPosition(WORLD_WIDTH - 30, WORLD_HEIGHT - 20, Align.center);
+        menuButton.setPosition(WORLD_WIDTH, WORLD_HEIGHT - (float) menuDownTexture.getRegionHeight()/2, Align.center);
+        menuButton.setWidth((float) menuDownTexture.getRegionWidth()/2);
         menuButtonScreen.addActor(menuButton);
 
         //When clicked opens ip the menu
@@ -161,11 +164,11 @@ class PauseMenu {
         pauseMenuScreen = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
 
         //Sets up the textures
-        TextureRegion quitUpTexture = uiAtlas.findRegion("QuitUnpressed");
-        TextureRegion quitDownTexture = uiAtlas.findRegion("QuitPressed");
+        TextureRegion quitUpTexture = uiAtlas.findRegion("SmallButtonUnpressed");
+        TextureRegion quitDownTexture = uiAtlas.findRegion("SmallButtonPressed");
 
-        TextureRegion resumeUpTexture = uiAtlas.findRegion("ResumeUnpressed");
-        TextureRegion resumeDownTexture = uiAtlas.findRegion("ResumePressed");
+        TextureRegion resumeUpTexture = uiAtlas.findRegion("SmallButtonUnpressed");
+        TextureRegion resumeDownTexture = uiAtlas.findRegion("SmallButtonPressed");
 
         //Sets up the buttons
         ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
@@ -221,8 +224,8 @@ class PauseMenu {
         nextLevelStage = new Stage(new FitViewport(WORLD_WIDTH,WORLD_HEIGHT));
 
         //Sets up the textures
-        TextureRegion quitUpTexture = uiAtlas.findRegion("QuitUnpressed");
-        TextureRegion quitDownTexture = uiAtlas.findRegion("QuitPressed");
+        TextureRegion quitUpTexture = uiAtlas.findRegion("SmallButtonUnpressed");
+        TextureRegion quitDownTexture = uiAtlas.findRegion("SmallButtonPressed");
 
         //Sets up the buttons
         ImageButton quitButton = new ImageButton(new TextureRegionDrawable(new TextureRegion(quitUpTexture)),new TextureRegionDrawable(quitDownTexture));
@@ -276,10 +279,9 @@ class PauseMenu {
     Purpose: Picks the level we're going to
     */
     private void chooseLevel(int levelChoice){
-        switch (levelChoice) {
-            case 0: {spaceHops.setScreen(new AdventureLevelOne(spaceHops));}
-            case 1: {spaceHops.setScreen(new AdventureLevelTwo(spaceHops));}
-        }
+        if(levelChoice == 0) {spaceHops.setScreen(new LoadingScreen(spaceHops, 1));}
+        if(levelChoice == 1) {spaceHops.setScreen(new LoadingScreen(spaceHops, 2));}
+        if(levelChoice == 2) {spaceHops.setScreen(new LoadingScreen(spaceHops, 3));}
     }
 
     /*
@@ -288,6 +290,25 @@ class PauseMenu {
     Purpose: Draws the background menu
     */
     void draw(SpriteBatch batch){ batch.draw(pauseMenuTexture, menuBackground.x, menuBackground.y, menuBackground.width, menuBackground.height);}
+
+    void drawMenuText(GlyphLayout glyphLayout, BitmapFont bitmapFont, SpriteBatch batch){
+        setUpText(glyphLayout, bitmapFont, batch, "Menu", WORLD_WIDTH - 3*glyphLayout.width/2, WORLD_HEIGHT - glyphLayout.height - 5);
+    }
+
+    void drawPauseText(GlyphLayout glyphLayout, BitmapFont bitmapFont, SpriteBatch batch){
+        setUpText(glyphLayout, bitmapFont, batch, "Resume", WORLD_WIDTH/2 - glyphLayout.width, WORLD_HEIGHT/2 + glyphLayout.height + 5);
+        setUpText(glyphLayout, bitmapFont, batch, "Quit", WORLD_WIDTH/2 - 15, WORLD_HEIGHT/2 - glyphLayout.height - 8);
+    }
+
+    void drawNextLevelText(GlyphLayout glyphLayout, BitmapFont bitmapFont, SpriteBatch batch){
+        setUpText(glyphLayout, bitmapFont, batch, "Next Level", WORLD_WIDTH/2 - glyphLayout.width - 10, WORLD_HEIGHT/2 + glyphLayout.height + 5);
+        setUpText(glyphLayout, bitmapFont, batch, "Quit", WORLD_WIDTH/2 - 15, WORLD_HEIGHT/2 - glyphLayout.height - 8);
+    }
+
+    private void setUpText(GlyphLayout glyphLayout, BitmapFont bitmapFont, SpriteBatch batch, String string, float x, float y){
+        glyphLayout.setText(bitmapFont, string);
+        bitmapFont.draw(batch, string, x, y);
+    }
 
     /*
     Input: Void

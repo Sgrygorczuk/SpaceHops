@@ -6,7 +6,6 @@ all classes. Will need to overhaul later
 
 package com.packt.spacehops;
 
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -20,11 +19,15 @@ public class Collectible {
     //Generic Collectible size, and  off set
     private static final float COLLECTIBLE_CIRCLE_RADIUS = 20f;
     private static final float ASTEROID_RADIUS = 32f;
+    private float yMax;
+    private float yMin;
     private float y = 350;
     private static final float Y_OFFSET = 200;
 
     //Flags
     private boolean collectedFlag = false;  //Sets to be collected so that it no longer collied after first touch
+    private boolean oscillating_horizontal = true;
+    private int state = 0;
 
     //Circle object
     private final Circle collectibleCircle;
@@ -48,8 +51,13 @@ public class Collectible {
         TextureRegion[][] collectibleTextures = new TextureRegion(collectibleTexture).split(TILE_WIDTH, TILE_HEIGHT); //Breaks down the texture into tiles
 
         //Sets the animation to be the texture 0-3 and sets it to loop
-        this.animation = new Animation<>(FRAME_DURATION, collectibleTextures[0][0], collectibleTextures[0][1], collectibleTextures[0][2], collectibleTextures[0][1]);
-        this.animation.setPlayMode(Animation.PlayMode.LOOP);
+        if(collectibleTextures.length > 1) {
+            this.animation = new Animation<>(FRAME_DURATION, collectibleTextures[0][0], collectibleTextures[0][1], collectibleTextures[0][2], collectibleTextures[0][1]);
+            this.animation.setPlayMode(Animation.PlayMode.LOOP);
+        }
+        else {
+            this.animation = new Animation<>(FRAME_DURATION, collectibleTextures[0][0]);
+        }
 
         //Position
         this.collectibleCircle = new Circle(0,y,COLLECTIBLE_CIRCLE_RADIUS);
@@ -64,6 +72,11 @@ public class Collectible {
         collectibleCircle.setX(x);
         float y = MathUtils.random(Y_OFFSET);
         collectibleCircle.setY(this.y - y);
+    }
+
+    void setBound(){
+        yMax = collectibleCircle.y + collectibleCircle.radius + 15;
+        yMin = collectibleCircle.y - 15;
     }
 
     /*
@@ -82,7 +95,7 @@ public class Collectible {
     Output: Void
     Purpose: Creates an object at specify x and y no offset
     */
-    void setPortionNoOffset(float x ,float y){
+    void setPosition(float x ,float y){
         collectibleCircle.setX(x);
         collectibleCircle.setY(y);
     }
@@ -121,7 +134,9 @@ public class Collectible {
     Output: Boolean
     Purpose: Returns the colliding Flag
     */
-    boolean getCollidingFlag(){return collectedFlag;}
+    boolean getCollidingFlag(){return !collectedFlag;}
+
+    int getState(){return state;}
 
     /*
     Input: Void
@@ -163,6 +178,8 @@ public class Collectible {
         collectibleCircle.radius = radius;
     }
 
+    void setState(int state){this.state = state;}
+
     /*
     Input: Void
     Output: Void
@@ -193,7 +210,18 @@ public class Collectible {
     Output: Void
     Purpose: Move the x by -3
     */
-    void updatePosition(){collectibleCircle.x -= 3;}
+    void updatePosition(int speed){collectibleCircle.x -= speed;}
+
+    void updateY(){
+        checkYBounds();
+        if(oscillating_horizontal){ collectibleCircle.y += 1; }
+        else  { collectibleCircle.y -= 1; }
+    }
+
+    private void checkYBounds(){
+        if(collectibleCircle.y + collectibleCircle.radius > yMax){oscillating_horizontal = false;}
+        else if(collectibleCircle.y < yMin){oscillating_horizontal = true;}
+    }
 
     /*
     Input: SpriteBatch

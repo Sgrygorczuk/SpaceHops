@@ -58,19 +58,26 @@ class Asteroids{
     Output: Void
     Purpose: Flower constructor, creates the rectangle and circle on top, and places it at -400 to 0 y
     */
-    Asteroids(TextureRegion floorTexture, TextureRegion ceilingTexture){
+    Asteroids(TextureRegion floorTexture, TextureRegion ceilingTexture, boolean offSet) {
         this.ceilingTexture = ceilingTexture;
         this.floorTexture = floorTexture;
 
-
+        float y = 0;
         //Randomly decides how tall the bottom flower is then it initializes that bottom flower
-        float y = MathUtils.random(HEIGHT_OFFSET);
+        if (offSet) {
+            y = MathUtils.random(HEIGHT_OFFSET);
+            //Uses the distance between flower to determine where how tall the other flower is going to be
+            this.ceilingCollisionCircle = new Circle((x + COLLISION_RECTANGLE_WIDTH) / 2, y + COLLISION_RECTANGLE_HEIGHT + DISTANCE_BETWEEN_FLOOR_AND_CEILING, ASTEROID_CIRCLE_RADIUS);
+            this.ceilingCollisionRectangle = new Rectangle(x, y + COLLISION_RECTANGLE_HEIGHT + DISTANCE_BETWEEN_FLOOR_AND_CEILING,COLLISION_RECTANGLE_WIDTH, COLLISION_RECTANGLE_HEIGHT);
+        }
+        else {
+            this.ceilingCollisionCircle = new Circle((x + COLLISION_RECTANGLE_WIDTH)/2, y + COLLISION_RECTANGLE_HEIGHT,ASTEROID_CIRCLE_RADIUS);
+            this.ceilingCollisionRectangle = new Rectangle(x, y + COLLISION_RECTANGLE_HEIGHT,COLLISION_RECTANGLE_WIDTH, COLLISION_RECTANGLE_HEIGHT);
+        }
+
         this.floorCollisionRectangle = new Rectangle(x, y,COLLISION_RECTANGLE_WIDTH, COLLISION_RECTANGLE_HEIGHT);
         this.floorCollisionCircle = new Circle((x + COLLISION_RECTANGLE_WIDTH)/2, y + COLLISION_RECTANGLE_HEIGHT ,ASTEROID_CIRCLE_RADIUS);
 
-        //Uses the distance between flower to determine where how tall the other flower is going to be
-        this.ceilingCollisionRectangle = new Rectangle(x, y + COLLISION_RECTANGLE_HEIGHT + DISTANCE_BETWEEN_FLOOR_AND_CEILING,COLLISION_RECTANGLE_WIDTH, COLLISION_RECTANGLE_HEIGHT);
-        this.ceilingCollisionCircle = new Circle((x + COLLISION_RECTANGLE_WIDTH)/2, y + COLLISION_RECTANGLE_HEIGHT + DISTANCE_BETWEEN_FLOOR_AND_CEILING,ASTEROID_CIRCLE_RADIUS);
     }
 
     /*

@@ -186,7 +186,7 @@ class Dragon {
     Output: Void
     Purpose: Based on the Phase different sets future mode is set up
     */
-    void updateFutureMode(){
+    private void updateFutureMode(){
         //If Phase 0 then just bite
         if(phaseFlag == 0){
             futureModeFlag = 4;
@@ -538,7 +538,7 @@ class Dragon {
     private void updateScalePosition(){
         if(scales.size > 0){
             for(Collectible scale : scales){
-                scale.updatePosition();
+                scale.updatePosition(3);
             }
         }
     }
@@ -585,7 +585,7 @@ class Dragon {
             for(int i = 0; i < 3; i++) {
                 Collectible bullet = new Collectible(bulletTexture);
                 bullet.setRadius(8f);
-                bullet.setPortionNoOffset(head.x + head.width - 15, y + head.height / 2 - 5);
+                bullet.setPosition(head.x + head.width - 15, y + head.height / 2 - 5);
                 bullets.add(bullet);
             }
     }
@@ -618,15 +618,15 @@ class Dragon {
             for (int i = 0; i < bullets.size; i++) {
                 //If the bullet is 1 out of 3  in array it will rise in the y direction while moving in x
                 if(i % 3 == 1 && bullets.get(i).getY() < yMax + head.height){
-                    bullets.get(i).setPortionNoOffset(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY() + Y_SPEED/10);
+                    bullets.get(i).setPosition(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY() + Y_SPEED/10);
                 }
                 //If the bullet is 3 out of 3 in array it will fall in the y direction while moving in x
                 else if(i % 3 == 0 && bullets.get(i).getY() > yMin){
-                    bullets.get(i).setPortionNoOffset(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY() - Y_SPEED/10);
+                    bullets.get(i).setPosition(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY() - Y_SPEED/10);
                 }
                 //If the bullet is any other place in array or reached it's y max it just moves forward in x
                 else{
-                    bullets.get(i).setPortionNoOffset(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY());
+                    bullets.get(i).setPosition(bullets.get(i).getX() + X_SPEED, bullets.get(i).getY());
                 }
             }
         }

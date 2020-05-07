@@ -1,0 +1,48 @@
+
+main_screen_assets.png
+size: 1024,1024
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+DoorDown
+  rotate: false
+  xy: 646, 724
+  size: 320, 240
+  orig: 320, 240
+  offset: 0, 0
+  index: -1
+DoorUp
+  rotate: false
+  xy: 646, 482
+  size: 320, 240
+  orig: 320, 240
+  offset: 0, 0
+  index: -1
+LeftScreen
+  rotate: false
+  xy: 2, 484
+  size: 320, 480
+  orig: 320, 480
+  offset: 0, 0
+  index: -1
+MainScreen
+  rotate: false
+  xy: 2, 2
+  size: 320, 480
+  orig: 320, 480
+  offset: 0, 0
+  index: -1
+RightScreen
+  rotate: false
+  xy: 324, 484
+  size: 320, 480
+  orig: 320, 480
+  offset: 0, 0
+  index: -1
+Shipyard
+  rotate: false
+  xy: 324, 2
+  size: 320, 480
+  orig: 320, 480
+  offset: 0, 0
+  index: -1
