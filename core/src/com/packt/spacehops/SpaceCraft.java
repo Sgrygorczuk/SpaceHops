@@ -32,6 +32,9 @@ class SpaceCraft {
     private static final int TILE_WIDTH = 32;			//The width of each tile in the texture
     private static final int TILE_HEIGHT = 32;			//The height of each tile in the texture
     private TextureRegion[][] spaceCraftTextures;
+    private TextureRegion shieldTexture;
+
+    boolean shieldFlag = false;
 
     /*
     Input: Void
@@ -46,6 +49,12 @@ class SpaceCraft {
         //Sets our object to be a circle
         collisionCircle = new Circle(x,y, COLLISION_RADIUS);
     }
+
+    void setShieldTexture(TextureRegion texture){ shieldTexture = texture; }
+
+    void setShieldFlag(){shieldFlag = !shieldFlag;}
+
+    boolean getShieldFlag(){return shieldFlag;}
 
     /*
     Input: Void
@@ -139,6 +148,7 @@ class SpaceCraft {
         TextureRegion spaceCraftTexture = spaceCraftTextures[0][0];
         if(ySpeed > 0){spaceCraftTexture = spaceCraftTextures[0][1];}
         batch.draw(spaceCraftTexture, collisionCircle.x-COLLISION_RADIUS, collisionCircle.y-COLLISION_RADIUS, 2*collisionCircle.radius, 2*collisionCircle.radius);
+        if(shieldFlag){batch.draw(shieldTexture, collisionCircle.x-COLLISION_RADIUS, collisionCircle.y-COLLISION_RADIUS, 2*collisionCircle.radius, 2*collisionCircle.radius);}
     }
 
     /*

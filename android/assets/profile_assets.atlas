@@ -18,3 +18,10 @@ RussianPack
   orig: 64, 32
   offset: 0, 0
   index: -1
+WearhouseProfile
+  rotate: false
+  xy: 134, 2
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: -1

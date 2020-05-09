@@ -1,13 +1,48 @@
 
 level_three_assets.png
-size: 128,64
+size: 1024,1024
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
 AsstetPackLvl3
   rotate: false
-  xy: 2, 2
+  xy: 646, 766
   size: 120, 40
   orig: 120, 40
+  offset: 0, 0
+  index: -1
+LevelThreeBackground
+  rotate: false
+  xy: 324, 326
+  size: 320, 480
+  orig: 320, 480
+  offset: 0, 0
+  index: -1
+LightingBorder
+  rotate: false
+  xy: 2, 64
+  size: 320, 10
+  orig: 320, 10
+  offset: 0, 0
+  index: -1
+Mess
+  rotate: false
+  xy: 2, 2
+  size: 60, 60
+  orig: 60, 60
+  offset: 0, 0
+  index: -1
+RobotArm
+  rotate: false
+  xy: 324, 258
+  size: 114, 66
+  orig: 114, 66
+  offset: 0, 0
+  index: -1
+RobotPacket
+  rotate: false
+  xy: 2, 76
+  size: 320, 730
+  orig: 320, 730
   offset: 0, 0
   index: -1

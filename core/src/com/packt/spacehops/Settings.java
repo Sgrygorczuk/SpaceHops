@@ -2,7 +2,7 @@ package com.packt.spacehops;
 
 class Settings
 {
-    private boolean[] levelCompletion = new boolean[]{true, true , true, false, false};
+    private boolean[] levelCompletion = new boolean[]{true, true , false, false, false};
     private int[] levelHighScore = new int[]{0,0,0,0,0,0};
 
     private boolean allLevelsBeatFlag = false;

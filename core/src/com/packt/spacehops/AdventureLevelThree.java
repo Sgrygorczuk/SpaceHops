@@ -73,11 +73,17 @@ class AdventureLevelThree extends ScreenAdapter {
     private TextureRegion boxCollectibleTexture;
     private TextureRegion boxShieldTexture;
     private TextureRegion bombTexture;
+    private TextureRegion botTexture;
+    private TextureRegion robotArm;
+    private TextureRegion shieldTexture;
+    private TextureRegion borderTexture;
+    private TextureRegion floatJunkTexture;
 
     /*
     User spaceship object
      */
     private SpaceCraft spaceCraft;          //Player object
+    private WarehouseBot warehouseBot;
     private ConversationBox conversationBox;//Conversation box that is used to talk to the user
 
     /*
@@ -85,6 +91,8 @@ class AdventureLevelThree extends ScreenAdapter {
     */
     private float GAP_BETWEEN_FLOATING_OBJECTS = 200;
     private Array<Collectible> floatingObjects = new Array<>();     //Array of asteroids
+    private Array<SpaceBorder> spaceBorders = new Array<>();     //Array of asteroids
+    private Array<FloatingJunk> floatingJunksArray = new Array<>();     //Array of asteroids
 
 
     //Background objects we use
@@ -159,11 +167,19 @@ class AdventureLevelThree extends ScreenAdapter {
         //Spaceship creation
         spaceCraft = new SpaceCraft(spaceCraftTexture);
         spaceCraft.updatePosition(WORLD_WIDTH/2, WORLD_HEIGHT/2);
+        spaceCraft.setShieldTexture(shieldTexture);
 
         //Player UI
         //Progress of stage
         progressBar = new ProgressBar(progressBarTexture);
         progressBar.setGoal(GOAL);
+
+        setUpFloatingJunk(50,320,.5);
+        setUpFloatingJunk(100,300, .3);
+        setUpFloatingJunk(200,350,.4);
+        setUpFloatingJunk(300,280,.2);
+
+        warehouseBot = new WarehouseBot(botTexture, robotArm);
 
         speedOMeter = new SpeedOMeter(speedOMeterFrameTexture, speedOMeterLightsTexture);
 
@@ -173,6 +189,13 @@ class AdventureLevelThree extends ScreenAdapter {
         pauseMenu = new PauseMenu(spaceHops);
 
     }
+
+    void setUpFloatingJunk(float x, float y, double mod){
+        FloatingJunk floatingJunk = new FloatingJunk(floatJunkTexture);
+        floatingJunk.setStats(x, y, mod);
+        floatingJunksArray.add(floatingJunk);
+    }
+
 
     /*
     Input: Void
@@ -200,6 +223,11 @@ class AdventureLevelThree extends ScreenAdapter {
 
         //Spaceship
         spaceCraftTexture = shipAtlas.findRegion("SpaceshipPack");
+        shieldTexture = shipAtlas.findRegion("Sheild");
+
+        backgroundTexture = levelAtlas.findRegion("LevelThreeBackground");
+
+        floatJunkTexture = levelAtlas.findRegion("Mess");
 
         //SpeedOMeter
         speedOMeterFrameTexture = uiAtlas.findRegion("SpeedOMeter");
@@ -208,6 +236,8 @@ class AdventureLevelThree extends ScreenAdapter {
         //Collectible
         collectibleTexture = uiAtlas.findRegion("CollectiblePack");
 
+        botTexture = levelAtlas.findRegion("RobotPacket");
+        robotArm = levelAtlas.findRegion("RobotArm");
 
         TextureRegion levelThreePack = levelAtlas.findRegion("AsstetPackLvl3");
         TextureRegion[][] breakDownTexture = new TextureRegion(levelThreePack).split(40, 40); //Breaks down the texture into tiles
@@ -217,7 +247,10 @@ class AdventureLevelThree extends ScreenAdapter {
 
         //Communication Frame
         communicationFrameTexture = uiAtlas.findRegion("CommunicationFrame");
-        profileTexture = profileAtlas.findRegion("RussianPack");
+        profileTexture = profileAtlas.findRegion("WearhouseProfile");
+
+        //
+        borderTexture = levelAtlas.findRegion("LightingBorder");
 
         //Progress Bar
         progressBarTexture = uiAtlas.findRegion("Score");
@@ -340,11 +373,20 @@ class AdventureLevelThree extends ScreenAdapter {
         //If we are leaving the screen we get rid of everything in memory
         if(pauseMenu.getDisposeFlag()){dispose();}      //If flag is true delete all the Stage and Texture objects
         if(screenOnFlag) {updateCommunicationScreenTime(delta);}   //Counts down till screen goes down
+        updateFloatingJunk();
         updatePart(delta);                              //Updates the phase of the level changing the enemy pattern
-        updateCheckForDeath();                          //Check for death collision
+        checkForArmCollision();                          //Check for death collision
         updateCollectibles();                           //Update the position of collectibles
+        if(part != PART.PartOne){updateSpaceBoarders();}
         updateSpaceship();                       //Updates the position of the spaceship
+        warehouseBot.update(delta);
         speedOMeter.updateState(spaceCraft.getSpeed());
+    }
+
+    private void updateFloatingJunk(){
+        if(floatingJunksArray.size > 1){
+            for(FloatingJunk floatingJunk : floatingJunksArray){floatingJunk.updatePosition(); }
+        }
     }
 
     /*
@@ -361,6 +403,7 @@ class AdventureLevelThree extends ScreenAdapter {
         //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to bite enemy
         if(part == PART.PartTwo && progressBar.getScore() == 3){
             part = PART.PartThree;
+            warehouseBot.setStartSpinning();
             screenOnFlag = true;
         }
         //Moves from Part 2 to Part 3, turns on commutation window, sets dragon to shoot fire and bite
@@ -421,7 +464,16 @@ class AdventureLevelThree extends ScreenAdapter {
     Output: Void
     Purpose: Checks if the player collided with any enemy objects if they did restarts
     */
-    private void updateCheckForDeath(){
+    private void checkForArmCollision(){
+        if(warehouseBot.isColliding(spaceCraft)){
+            if(spaceCraft.getShieldFlag()){
+                spaceCraft.setShieldFlag();
+                spaceCraft.flyUp();
+            }
+            else {
+                restart();
+            }
+        }
     }
 
     /*
@@ -432,7 +484,7 @@ class AdventureLevelThree extends ScreenAdapter {
     private void updateCollectibles(){
         checkIfNeedNewFloatingObject();
         updateCollectiblePosition();
-        checkForCollision();
+        checkForFloatingObjectCollision();
         removeNewFloatingObject();
     }
 
@@ -453,8 +505,9 @@ class AdventureLevelThree extends ScreenAdapter {
     private void createNewFloatingObject(){
         TextureRegion region = boxCollectibleTexture;
         int choice = MathUtils.random(0,2);
-        if(choice == 1){ region = boxShieldTexture; }
+        if(choice == 1 && !spaceCraft.getShieldFlag()){ region = boxShieldTexture; }
         else if(choice == 2){ region = bombTexture; }
+        else { choice = 0;}
         Collectible newFloatingObject = new Collectible(region);
         newFloatingObject.setPosition(320, 100, 5);
         newFloatingObject.setBound();
@@ -483,19 +536,26 @@ class AdventureLevelThree extends ScreenAdapter {
         }
     }
 
-    private void checkForCollision(){
+    private void checkForFloatingObjectCollision(){
         if (floatingObjects.size > 0) {
             for (Collectible collectible : floatingObjects) {
                 if(collectible.isColliding(spaceCraft)){
                     //If collides with bomb, end level
                     if(collectible.getState() == 2){
-                        restart();
+                        if(spaceCraft.getShieldFlag()){
+                           spaceCraft.setShieldFlag();
+                           floatingObjects.removeValue(collectible,true);
+                        }
+                        else {
+                            restart();
+                        }
                     }
                     else{
                         //If collides while speed is enough to break; breaks box
                         if(speedOMeter.getState() == 2){
                             //Breaks shield box, gets shield
                             if(collectible.getState() == 1){
+                                spaceCraft.setShieldFlag();
                                 floatingObjects.removeValue(collectible,true);
                             }
                             //Breaks collectible box, gets point
@@ -517,6 +577,72 @@ class AdventureLevelThree extends ScreenAdapter {
     }
 
     /*
+Input: Void
+Output: Void
+Purpose:Central function for updating the space boarders
+*/
+    private void updateSpaceBoarders(){
+        checkIfRemoveSpaceBoarder();
+        checkIfNewBoarderIsNeeded();
+        updateSpaceBoarderPosition();
+        checkForSpaceBoarderCollision();
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Creates a new set of boarders
+    */
+    private void createNewSpaceBoarder(float initialX){
+        SpaceBorder spaceBorder = new SpaceBorder(initialX, borderTexture, borderTexture);
+        spaceBorders.add(spaceBorder);
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Checks if there is need to create a new boarder
+    */
+    private void checkIfNewBoarderIsNeeded(){
+        //If no boarder on screen exits
+        if (spaceBorders.size == 0) { createNewSpaceBoarder(0); }
+        //If the there is only one make another one
+        else if (spaceBorders.size == 1){ createNewSpaceBoarder(WORLD_WIDTH);}
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Gets rid of the space boarder that's off the screen
+    */
+    private void checkIfRemoveSpaceBoarder(){
+        if(spaceBorders.size > 0){
+            SpaceBorder firstSpaceBorder = spaceBorders.first();
+            if(firstSpaceBorder.getX() <= -WORLD_WIDTH){spaceBorders.removeValue(firstSpaceBorder,true); }
+        }
+    }
+
+    /*
+    Input: Void
+    Output: Void
+    Purpose: Updates the position of the boarders
+    */
+    private void updateSpaceBoarderPosition(){ for(SpaceBorder spaceBorder : spaceBorders){ spaceBorder.updatePosition(); }}
+
+    private void checkForSpaceBoarderCollision(){
+        for (SpaceBorder spaceBorder : spaceBorders) {
+            if (spaceBorder.isColliding(spaceCraft)) {
+                if (spaceCraft.getShieldFlag()) {
+                    spaceCraft.setShieldFlag();
+                    if(spaceCraft.getY() < 100) {spaceCraft.flyUp();}
+                    else{ spaceCraft.flyDown();}
+                }
+                else { restart(); }
+            }
+        }
+    }
+
+    /*
     Input: Void
     Output: Void
     Purpose: Restart the variables to initial position and removes all flowers from array.
@@ -524,6 +650,9 @@ class AdventureLevelThree extends ScreenAdapter {
     private void restart(){
         spaceCraft.updatePosition(WORLD_WIDTH/2,WORLD_HEIGHT/2);
         spaceCraft.restart();
+        floatingObjects.clear();
+        spaceBorders.clear();
+        warehouseBot.restart();
         progressBar.restart();
         part = PART.PartOne;
         moveTimer = MOVE_TIME;
@@ -541,9 +670,13 @@ class AdventureLevelThree extends ScreenAdapter {
         batch.setTransformMatrix(camera.view);
         //Batch setting up texture
         batch.begin();
+        batch.draw(backgroundTexture, 0 ,0);
+        for(FloatingJunk floatingJunk : floatingJunksArray){floatingJunk.draw(batch);}
         //Draws player
         drawFloatingObjects(batch);
+        warehouseBot.draw(batch);
         spaceCraft.draw(batch);
+        if(part != PART.PartOne){for(SpaceBorder spaceBorder : spaceBorders){spaceBorder.draw(batch);}}
         speedOMeter.draw(batch);
         //Draws conversation box
         conversationBox.draw(batch);
